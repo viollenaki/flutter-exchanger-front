@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../events/events_screen.dart';
+
 class AppDrawer extends StatelessWidget {
   final VoidCallback? onDrawerOpened;
 
@@ -41,8 +43,11 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.list),
             title: Text('События'),
             onTap: () {
-              // TODO: Navigate to events screen
               Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EventsScreen()),
+              );
             },
           ),
           ListTile(

@@ -42,6 +42,9 @@ class CustomDropdownState extends State<CustomDropdown> with SingleTickerProvide
 
   @override
   void dispose() {
+    if (_isOpen) {
+      closeDropdown();
+    }
     _animationController.dispose();
     _overlayEntry?.remove();
     super.dispose();
@@ -107,42 +110,38 @@ class CustomDropdownState extends State<CustomDropdown> with SingleTickerProvide
 
   void _toggleDropdown() {
     if (_isOpen) {
-      _animationController.reverse().then((_) {
-        if (mounted) {
-          setState(() {
-            _isOpen = false;
-            _overlayEntry?.remove();
-            _overlayEntry = null;
-          });
-        }
-      });
+      closeDropdown();
     } else {
       _overlayEntry = _createOverlayEntry();
-      Overlay.of(context).insert(_overlayEntry!);
-      setState(() {
-        _isOpen = true;
-      });
-      _animationController.forward();
-      if (widget.onMenuOpened != null) {
-        widget.onMenuOpened!();
+      if (mounted) {
+        Overlay.of(context).insert(_overlayEntry!);
+        setState(() {
+          _isOpen = true;
+        });
+        _animationController.forward();
+        if (widget.onMenuOpened != null) {
+          widget.onMenuOpened!();
+        }
       }
     }
   }
 
   void _selectItem(String? value) {
-    widget.onChanged(value);
-    _toggleDropdown();
+    if (mounted) {
+      widget.onChanged(value);
+      closeDropdown();
+    }
   }
 
   void closeDropdown() {
-    if (_isOpen) {
+    if (_isOpen && mounted) {
       _animationController.reverse().then((_) {
         if (mounted) {
           setState(() {
             _isOpen = false;
-            _overlayEntry?.remove();
-            _overlayEntry = null;
           });
+          _overlayEntry?.remove();
+          _overlayEntry = null;
         }
       });
     }
@@ -159,13 +158,7 @@ class CustomDropdownState extends State<CustomDropdown> with SingleTickerProvide
           }
         },
         child: GestureDetector(
-          onTap: () {
-            // Закрываем drawer если он открыт
-            if (Scaffold.of(context).isDrawerOpen) {
-              Navigator.of(context).pop();
-            }
-            _toggleDropdown();
-          },
+          onTap: _toggleDropdown, // Simplified tap handler
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             decoration: BoxDecoration(

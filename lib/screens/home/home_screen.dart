@@ -103,13 +103,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    if (!mounted) return;
+    
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) {
+    
+    if (picked != null && mounted) {
       setState(() {
         _selectedDate = DateFormat('yyyy-MM-dd').format(picked);
       });
@@ -170,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
 
     try {
-      final type = _isUpSelected ? 'up' : _isDownSelected ? 'down' : '';
+      final type = _isUpSelected ? 'Продажа' : _isDownSelected ? 'Покупка' : '';
       if (type.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Выберите тип операции (продажа/покупка)')),

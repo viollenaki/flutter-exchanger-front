@@ -1,9 +1,10 @@
+import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'screens/home/home_screen.dart';
-import 'styles/app_theme.dart';
+import 'screens/login/login_screen.dart';
+import 'screens/home/home_screen.dart'; // Import the main screen
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -12,8 +13,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Exchanger',
       theme: AppTheme.darkTheme,
-      home: const HomeScreen(), // Remove title parameter as it's no longer needed
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/main': (context) => const HomeScreen(), 
+      },
     );
   }
 }

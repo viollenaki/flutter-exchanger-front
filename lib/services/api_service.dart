@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/user.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://127.0.0.1:8000/api/v1';
@@ -57,6 +58,32 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error connecting to server: $e');
+    }
+  }
+
+  static Future<User?> authenticate(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/authenticate'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'username': username, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      return User(username: username);
+    } else {
+      return null;
+    }
+  }
+
+  static Future<void> resetPassword(String email) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/password-reset'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': email}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reset password');
     }
   }
 }

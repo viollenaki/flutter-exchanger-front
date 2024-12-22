@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/user.dart';
 
 import '../events/events_screen.dart';
 
@@ -16,28 +17,42 @@ class AppDrawer extends StatelessWidget {
       onDrawerOpened?.call();
     });
 
+    final username = UserManager().getCurrentUser();
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.blueAccent,
+              color: Theme.of(context).primaryColor,
             ),
-            child: Text(
-              'Меню',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Привет, $username!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black54, // Dark color for the circle
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.logout, color: Colors.red),
+                    onPressed: () {
+                      UserManager().setCurrentUser(null);
+                      Navigator.pushReplacementNamed(context, '/');
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-          ListTile(
-            leading: Icon(Icons.home),
-            title: Text('Главная'),
-            onTap: () {
-              Navigator.pop(context);
-            },
           ),
           ListTile(
             leading: Icon(Icons.list),

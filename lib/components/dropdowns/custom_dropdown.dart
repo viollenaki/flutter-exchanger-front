@@ -68,13 +68,13 @@ class CustomDropdownState extends State<CustomDropdown> with SingleTickerProvide
           showWhenUnlinked: false,
           offset: Offset(0, openUpward ? -200 : size.height), // changed from -250 to -200
           child: Material(
-            elevation: 8,
+            elevation: 1,
             borderRadius: BorderRadius.circular(8.0),
             child: SizeTransition(
               sizeFactor: _expandAnimation,
               axisAlignment: -1,
               child: Container(
-                constraints: BoxConstraints(maxHeight: 200), // changed from 250 to 200
+                constraints: BoxConstraints(maxHeight: 200), 
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black, width: 1),
                   borderRadius: BorderRadius.circular(8.0),
@@ -83,16 +83,16 @@ class CustomDropdownState extends State<CustomDropdown> with SingleTickerProvide
                 child: SingleChildScrollView(
                   child: Column(
                     children: widget.items.map((String value) {
-                      return InkWell( // заменяем GestureDetector на InkWell для эффекта при нажатии
+                      return InkWell( 
                         onTap: () => _selectItem(value),
                         child: Container(
                           width: double.infinity,
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12), // увеличили vertical padding с 8 до 12
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           child: Text(
                             value,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16, // увеличили размер шрифта
+                              fontSize: 16,
                             ),
                           ),
                         ),

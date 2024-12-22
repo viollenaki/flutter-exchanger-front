@@ -61,6 +61,24 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _deleteEvent(int id) async {
+    try {
+      await ApiService.deleteEvent(id);
+      setState(() {
+        _selectedRowIndex = null; // Reset the selected row index
+        _animationController.reverse(); // Hide the action buttons
+      });
+      await _fetchEvents(); // Refresh the events list
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Событие успешно удалено')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка удаления события: $e')),
+      );
+    }
+  }
+
   Future<bool?> _showDeleteConfirmation() async { // Changed return type to Future<bool?>
     return showGeneralDialog<bool>( // Added type parameter <bool>
       context: context,
@@ -95,7 +113,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   child: const Text('неее :)'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
+                  onPressed: () {
+                    _deleteEvent(_events[_selectedRowIndex!]['id']);
+                    
+                    Navigator.of(context).pop(true);
+                  },
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                   ),

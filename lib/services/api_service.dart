@@ -86,4 +86,12 @@ class ApiService {
       throw Exception('Failed to reset password');
     }
   }
+
+  static Future<void> deleteEvent(int id) async {
+    final response = await http.delete(Uri.parse('$_baseUrl/events/$id'));
+
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete event');
+    }
+  }
 }

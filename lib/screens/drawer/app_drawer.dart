@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user.dart';
-
 import '../events/events_screen.dart';
+import '../currencies/currencies_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final VoidCallback? onDrawerOpened;
@@ -65,12 +65,30 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
+          ExpansionTile(
             leading: Icon(Icons.settings),
             title: Text('Настройки'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.person),
+                title: Text('Пользователи'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to Users screen
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.monetization_on),
+                title: Text('Валюты'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CurrenciesScreen()),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),

@@ -65,8 +65,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     try {
       await ApiService.deleteEvent(id);
       setState(() {
-        _selectedRowIndex = null; // Reset the selected row index
-        _animationController.reverse(); // Hide the action buttons
+        _selectedRowIndex = null;
+        _animationController.reverse();
       });
       await _fetchEvents(); // Refresh the events list
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,7 +176,6 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                       final shouldDelete = await _showDeleteConfirmation();
                       if (shouldDelete == true) {
                         // TODO: Implement delete functionality
-                        print('Deleting item at index $_selectedRowIndex');
                       }
                     },
                     icon: const Icon(Icons.delete),

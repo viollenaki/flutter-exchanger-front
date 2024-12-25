@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/user.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static const String _baseUrl = 'http://127.0.0.1:5050/api/v1';
 
   static Future<List<String>> fetchCurrencies() async {
     final response = await http.get(Uri.parse('$_baseUrl/currencies'));
@@ -25,6 +25,29 @@ class ApiService {
 
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception('Failed to add currency');
+    }
+  }
+
+  static Future<void> deleteCurrency(String currencyName) async {
+    final response = await http.delete(Uri.parse('$_baseUrl/currencies/$currencyName'), 
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({'name': currencyName})
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete currency');
+    }
+  }
+
+  static Future<void> editCurrency(String currencyName, String currencyOldName) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/currencies/$currencyName'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'newName': currencyName, 'oldName': currencyOldName}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update currency');
     }
   }
 

@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, RouteAware {
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _rateController = TextEditingController();
   final TextEditingController _totalController = TextEditingController();
@@ -77,6 +77,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchCurrencies();
+  }
+
+  @override
+  void didPush() {
+    super.didPush();
+    _fetchCurrencies();
+  }
+
   Future<void> _initialFetchCurrencies() async {
     try {
       final currencies = await ApiService.fetchCurrencies();
@@ -100,11 +112,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _fetchCurrencies() async {
     try {
       final currencies = await ApiService.fetchCurrencies();
-      if (mounted) {
-        setState(() {
-          _currencies = ['Валюта', ...currencies];
-        });
-      }
+      setState(() {
+        _currencies = ['Валюта', ...currencies];
+      });
     } catch (e) {
       if (mounted) {
         setState(() {

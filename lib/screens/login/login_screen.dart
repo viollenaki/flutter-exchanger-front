@@ -94,8 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       _showLoadingIndicator();
 
                       User? user = await ApiService.authenticate(
-                        usernameController.text,
-                        passwordController.text,
+                        usernameController.text.trim(),
+                        passwordController.text.trim(),
                       );
 
                       _hideLoadingIndicator();

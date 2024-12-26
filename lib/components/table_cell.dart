@@ -5,7 +5,7 @@ class TableCell extends StatelessWidget {
   final String text;
   final double width;
 
-  const TableCell(this.text, {required this.width});
+  const TableCell(this.text, {super.key, required this.width});
 
   @override
   Widget build(BuildContext context) {

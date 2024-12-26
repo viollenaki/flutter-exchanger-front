@@ -3,13 +3,14 @@ import 'package:http/http.dart' as http;
 import '../models/user.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://127.0.0.1:5050/api/v1';
+  static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
 
   static Future<List<String>> fetchCurrencies() async {
     final response = await http.get(Uri.parse('$_baseUrl/currencies'));
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+      final decodedResponse = utf8.decode(response.bodyBytes);
+      final List<dynamic> data = json.decode(decodedResponse);
       return data.map((currency) => currency['name'].toString()).toList();
     } else {
       throw Exception('Failed to load currencies');
@@ -73,7 +74,6 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/events'));
       if (response.statusCode == 200) {
-        // Декодируем ответ в UTF-8
         final decodedResponse = utf8.decode(response.bodyBytes);
         return json.decode(decodedResponse);
       } else {
@@ -115,6 +115,67 @@ class ApiService {
 
     if (response.statusCode != 204) {
       throw Exception('Failed to delete event');
+    }
+  }
+
+
+  static Future<List<String>> fetchUsers() async {
+    final response = await http.get(Uri.parse('$_baseUrl/users'));
+
+    if (response.statusCode == 200) {
+      final decodedResponse = utf8.decode(response.bodyBytes);
+      final List<dynamic> data = json.decode(decodedResponse);
+      return data.map((user) => user['name'].toString()).toList();
+    } else {
+      throw Exception('Failed to load users');
+    }
+  }
+
+  static Future<void> addUser(String username, String password, bool isSuperAdmin, String email) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/users'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'username': username, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email}),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Failed to add user');
+    }
+  }
+
+  static Future<void> deleteUser(String username) async {
+    final response = await http.delete(Uri.parse('$_baseUrl/users'), 
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({'username': username})
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete user');
+    }
+  }
+
+  static Future<void> editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/users'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'username': username, 'oldUsername': oldUsername, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update user');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getUserDetails(String username) async {
+    final response = await http.get(Uri.parse('$_baseUrl/users/$username'));
+
+    if (response.statusCode == 200) {
+      final decodedResponse = utf8.decode(response.bodyBytes);
+      final data = json.decode(decodedResponse);
+      // log data to console
+      return data;
+    } else {
+      throw Exception('Failed to load user details');
     }
   }
 }

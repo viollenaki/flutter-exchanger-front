@@ -5,7 +5,7 @@ class HeaderCell extends StatelessWidget {
   final String text;
   final double width;
 
-  const HeaderCell(this.text, {required this.width});
+  const HeaderCell(this.text, {super.key, required this.width});
 
   @override
   Widget build(BuildContext context) {

@@ -173,10 +173,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   const SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      final shouldDelete = await _showDeleteConfirmation();
-                      if (shouldDelete == true) {
-                        // TODO: Implement delete functionality
-                      }
+                      await _showDeleteConfirmation();
                     },
                     icon: const Icon(Icons.delete),
                     label: const Text('Удалить'),
@@ -256,16 +253,53 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                               width: _headerTitles.length * 140, // Фиксированная общая ширина
                               child: Column(
                                 children: [
-                                  Container(
-                                    color: Colors.grey[800],
-                                    child: Row(
-                                      children: _headerTitles.entries.map((entry) => 
-                                        HeaderCell(
-                                          entry.value, 
-                                          width: 140,
-                                        )
-                                      ).toList(),
-                                    ),
+                                  Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(8),
+                                          topRight: Radius.circular(8),
+                                        ),
+                                        child: Container(
+                                          color: Colors.grey[800],
+                                          child: Row(
+                                            children: _headerTitles.entries.map((entry) => 
+                                              HeaderCell(
+                                                entry.value, 
+                                                width: 140,
+                                              )
+                                            ).toList(),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned.fill(
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                          ),
+                                          child: Container(
+                                            color: Colors.transparent,
+                                            child: Row(
+                                              children: List.generate(
+                                                _headerTitles.length,
+                                                (index) => Container(
+                                                  width: 140,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius: index == 0
+                                                        ? const BorderRadius.only(topLeft: Radius.circular(8))
+                                                        : index == _headerTitles.length - 1
+                                                            ? const BorderRadius.only(topRight: Radius.circular(8))
+                                                            : BorderRadius.zero,
+                                                    color: Colors.transparent,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Expanded(
                                     child: SingleChildScrollView(

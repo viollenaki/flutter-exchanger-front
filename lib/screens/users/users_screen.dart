@@ -5,21 +5,22 @@ import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
 import '../../components/buttons/custom_button.dart';
 
-class CurrenciesScreen extends StatefulWidget {
-  const CurrenciesScreen({super.key});
+class UsersScreen extends StatefulWidget {
+  const UsersScreen({super.key});
 
   @override
-  _CurrenciesScreenState createState() => _CurrenciesScreenState();
+  _UsersScreenState createState() => _UsersScreenState();
 }
 
-class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerProviderStateMixin {
+class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
-  List<String> _currencies = [];
+  List<String> _users = [];
   int? _selectedRowIndex;
+  bool _isSuperAdmin = false;
   late AnimationController _animationController;
 
   final Map<String, String> _headerTitles = {
-    'currency': 'Валюта',
+    'username': 'Имя пользователя',
   };
 
   @override
@@ -29,7 +30,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _fetchCurrencies();
+    _fetchUsers();
   }
 
   @override
@@ -38,11 +39,11 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
     super.dispose();
   }
 
-  Future<void> _fetchCurrencies() async {
+  Future<void> _fetchUsers() async {
     try {
-      final currencies = await ApiService.fetchCurrencies();
+      final users = await ApiService.fetchUsers();
       setState(() {
-        _currencies = currencies;
+        _users = users;
         _isLoading = false;
       });
     } catch (e) {
@@ -50,35 +51,35 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки валют')),
+        SnackBar(content: Text('Ошибка загрузки пользователей')),
       );
     }
   }
 
-  Future<void> _addCurrency(String currencyName) async {
+  Future<void> _addUser(String username, String password, bool isSuperAdmin, String email) async {
     try {
-      await ApiService.addCurrency(currencyName);
+      await ApiService.addUser(username, password, isSuperAdmin, email);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Валюта добавлена')),
+        SnackBar(content: const Text('Пользователь добавлен')),
       );
-      await _fetchCurrencies();
+      await _fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка добавления валюты')),
+        SnackBar(content: Text('Ошибка добавления пользователя')),
       );
     }
   }
 
-  Future<void> _editCurrentcy(String currencyName, String oldCurrencyName) async {
+  Future<void> _editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email) async {
     try {
-      await ApiService.editCurrency(currencyName, oldCurrencyName);
+      await ApiService.editUser(username, oldUsername, password, isSuperAdmin, email);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Валюта изменена')),
+        SnackBar(content: const Text('Пользователь изменен')),
       );
-      await _fetchCurrencies();
+      await _fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка изменения валюты')),
+        SnackBar(content: Text('Ошибка изменения пользователя')),
       );
     }
   }
@@ -95,65 +96,135 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
     });
   }
 
-  Future<void> _deleteCurrency(String currency) async {
+  Future<void> _deleteUser(String username) async {
     try {
-      await ApiService.deleteCurrency(currency);
+      await ApiService.deleteUser(username);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Валюта "$currency" удалена')),
+        SnackBar(content: Text('Пользователь "$username" удален')),
       );
       setState(() {
         _selectedRowIndex = null;
         _animationController.reverse();
       });
-      await _fetchCurrencies();
+      await _fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка удаления валюты')),
+        SnackBar(content: Text('Ошибка удаления пользователя')),
       );
     }
   }
 
-  Future<void> _showEditDialog(String currency) async {
-    final TextEditingController controller = TextEditingController(text: currency);
-    String oldCurrency = currency;
+  Future<void> _showEditDialog(String username) async {
+    Map<String, dynamic> userData = await ApiService.getUserDetails(username); 
+    final TextEditingController usernameController = TextEditingController(text: username);
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController emailController = TextEditingController(text: userData["email"]);
+    String oldUsername = username;
+    bool isSuperAdmin = userData["isSuperUser"];
+    final formKey = GlobalKey<FormState>();
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Редактировать валюту'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Название валюты',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _editCurrentcy(controller.text, oldCurrency);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Сохранить'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Редактировать пользователя'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Имя пользователя',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите имя пользователя';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Эл. почта',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите эл. почту';
+                        }
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Введите корректный адрес эл. почты';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      decoration: const InputDecoration(
+                        labelText: 'Пароль (оставьте пустым, если не хотите менять)',
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty && value.length < 8) {
+                          return 'Пароль должен содержать не менее 8 символов';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Text('Суперадмин'),
+                        Checkbox(
+                          value: isSuperAdmin,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isSuperAdmin = value ?? false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Отмена'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      await _editUser(usernameController.text, oldUsername, passwordController.text.isNotEmpty ? passwordController.text : '', isSuperAdmin, emailController.text);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Сохранить'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Future<void> _showDeleteDialog(String currency) async {
+  Future<void> _showDeleteDialog(String username) async {
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Удалить валюту'),
-          content: Text('Вы уверены, что хотите удалить валюту "$currency"?'),
+          title: const Text('Удалить пользователя'),
+          content: Text('Вы уверены, что хотите удалить пользователя "$username"?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -163,7 +234,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
             ),
             TextButton(
               onPressed: () {
-                _deleteCurrency(currency);
+                _deleteUser(username);
                 Navigator.of(context).pop();
               },
               style: TextButton.styleFrom(
@@ -178,33 +249,104 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
   }
 
   Future<void> _showAddDialog() async {
-    final TextEditingController controller = TextEditingController();
+    final TextEditingController usernameController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Добавить валюту'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Название валюты',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _addCurrency(controller.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Добавить'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Добавить пользователя'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Имя пользователя',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите имя пользователя';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Эл. почта',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите эл. почту';
+                        }
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Введите корректный адрес эл. почты';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      decoration: const InputDecoration(
+                        labelText: 'Пароль',
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите пароль';
+                        }
+                        if (value.length < 8) {
+                          return 'Пароль должен содержать не менее 8 символов';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Text('Суперадмин'),
+                        Checkbox(
+                          value: _isSuperAdmin,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _isSuperAdmin = value ?? false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Отмена'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Добавить'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -227,7 +369,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                   ElevatedButton.icon(
                     onPressed: () {
                       if (_selectedRowIndex != null) {
-                        _showEditDialog(_currencies[_selectedRowIndex!]);
+                        _showEditDialog(_users[_selectedRowIndex!]);
                       }
                     },
                     icon: const Icon(Icons.edit),
@@ -246,7 +388,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                   ElevatedButton.icon(
                     onPressed: () {
                       if (_selectedRowIndex != null) {
-                        _showDeleteDialog(_currencies[_selectedRowIndex!]);
+                        _showDeleteDialog(_users[_selectedRowIndex!]);
                       }
                     },
                     icon: const Icon(Icons.delete),
@@ -274,7 +416,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Валюты'),
+        title: const Text('Пользователи'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -364,9 +506,9 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                               ),
                               Expanded(
                                 child: ListView.builder(
-                                  itemCount: _currencies.length,
+                                  itemCount: _users.length,
                                   itemBuilder: (context, index) {
-                                    final currency = _currencies[index];
+                                    final user = _users[index];
                                     return GestureDetector(
                                       onTap: () => _handleRowSelection(index),
                                       child: Container(
@@ -377,7 +519,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                                           children: _headerTitles.keys.map((key) => 
                                             Expanded(
                                               child: custom.TableCell(
-                                                currency, 
+                                                user, 
                                                 width: MediaQuery.of(context).size.width / _headerTitles.length, // Adjust width dynamically
                                               ),
                                             ),

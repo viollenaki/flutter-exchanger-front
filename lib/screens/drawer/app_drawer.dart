@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/user.dart';
 import '../events/events_screen.dart';
 import '../currencies/currencies_screen.dart';
+import '../users/users_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final VoidCallback? onDrawerOpened;
@@ -59,10 +60,7 @@ class AppDrawer extends StatelessWidget {
             title: Text('События'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EventsScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => EventsScreen()));
             },
           ),
           ExpansionTile(
@@ -74,7 +72,7 @@ class AppDrawer extends StatelessWidget {
                 title: Text('Пользователи'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Navigate to Users screen
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UsersScreen()));
                 },
               ),
               ListTile(
@@ -82,10 +80,7 @@ class AppDrawer extends StatelessWidget {
                 title: Text('Валюты'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CurrenciesScreen()),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => CurrenciesScreen()));
                 },
               ),
             ],

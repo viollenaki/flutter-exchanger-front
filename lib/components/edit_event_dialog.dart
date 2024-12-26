@@ -10,7 +10,7 @@ import 'buttons/icon_toggle_button.dart';
 class EditEventDialog extends StatefulWidget {
   final Map<String, dynamic> event;
 
-  const EditEventDialog({required this.event});
+  const EditEventDialog({super.key, required this.event});
 
   @override
   State<EditEventDialog> createState() => _EditEventDialogState();

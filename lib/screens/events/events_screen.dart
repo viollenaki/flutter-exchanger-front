@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
+import '../../components/dropdowns/custom_dropdown.dart';
+import '../../components/buttons/custom_button.dart';
 
 import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
 import '../../components/edit_event_dialog.dart';
+import '../../components/filter_dialog.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -16,8 +20,12 @@ class EventsScreen extends StatefulWidget {
 class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   List<dynamic> _events = [];
-  int? _selectedRowIndex; // Добавляем индекс выбранной строки
-  late AnimationController _animationController;  // Добавляем контроллер анимации
+  List<String> _currencies = [];
+  String? _selectedCurrency;
+  String? _selectedType;
+  int? _selectedRowIndex;
+  DateTime? _selectedDate;
+  late AnimationController _animationController;
 
   final Map<String, String> _headerTitles = {
     'date': 'Дата',
@@ -32,10 +40,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150), // Изменили с 300 на 150
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _fetchEvents();
+    _fetchCurrencies();
   }
 
   @override
@@ -61,6 +70,19 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _fetchCurrencies() async {
+    try {
+      final currencies = await ApiService.fetchCurrencies();
+      setState(() {
+        _currencies = currencies;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading currencies: $e')),
+      );
+    }
+  }
+
   Future<void> _deleteEvent(int id) async {
     try {
       await ApiService.deleteEvent(id);
@@ -68,7 +90,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
         _selectedRowIndex = null;
         _animationController.reverse();
       });
-      await _fetchEvents(); // Refresh the events list
+      await _fetchEvents();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Событие успешно удалено')),
       );
@@ -79,8 +101,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     }
   }
 
-  Future<bool?> _showDeleteConfirmation() async { // Changed return type to Future<bool?>
-    return showGeneralDialog<bool>( // Added type parameter <bool>
+  Future<bool?> _showDeleteConfirmation() async {
+    return showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
@@ -115,7 +137,6 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 TextButton(
                   onPressed: () {
                     _deleteEvent(_events[_selectedRowIndex!]['id']);
-                    
                     Navigator.of(context).pop(true);
                   },
                   style: TextButton.styleFrom(
@@ -138,6 +159,26 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     );
   }
 
+  Future<void> _showFilterDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => FilterDialog(
+        currencies: _currencies,
+        selectedCurrency: _selectedCurrency,
+        selectedType: _selectedType,
+        selectedDate: _selectedDate,
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedCurrency = result['currency'];
+        _selectedType = result['type'];
+        _selectedDate = result['date'];
+      });
+    }
+  }
+
   Widget _buildActionButtons() {
     return AnimatedBuilder(
       animation: _animationController,
@@ -150,41 +191,44 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
               height: 60,
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      if (_selectedRowIndex != null) {
-                        _showEditDialog(_events[_selectedRowIndex!]);
-                      }
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Редактировать'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        if (_selectedRowIndex != null) {
+                          _showEditDialog(_events[_selectedRowIndex!]);
+                        }
+                      },
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      label: const Text('Редактировать'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 4,
                       ),
-                      elevation: 4,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await _showDeleteConfirmation();
-                    },
-                    icon: const Icon(Icons.delete),
-                    label: const Text('Удалить'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await _showDeleteConfirmation();
+                      },
+                      icon: const Icon(Icons.delete, color: Colors.white,),
+                      label: const Text('Удалить'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 4,
                       ),
-                      elevation: 4,
                     ),
                   ),
                 ],
@@ -208,6 +252,39 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     });
   }
 
+  List<dynamic> _filterEvents() {
+    List<dynamic> filteredEvents = _events;
+    if (_selectedCurrency != null && _selectedCurrency!.isNotEmpty) {
+      filteredEvents = filteredEvents.where((event) => event['currency'] == _selectedCurrency).toList();
+    }
+    if (_selectedType != null && _selectedType!.isNotEmpty) {
+      filteredEvents = filteredEvents.where((event) => event['type'] == _selectedType).toList();
+    }
+    if (_selectedDate != null) {
+      filteredEvents = filteredEvents.where((event) {
+        final eventDate = DateTime.parse(event['date']);
+        return eventDate.year == _selectedDate!.year &&
+               eventDate.month == _selectedDate!.month &&
+               eventDate.day == _selectedDate!.day;
+      }).toList();
+    }
+    return filteredEvents;
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -215,6 +292,12 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
         title: const Text('События'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+          ),
+        ],
       ),
       extendBodyBehindAppBar: true,
       body: SafeArea(
@@ -237,10 +320,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
             : Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height - 100, // Высота экрана минус отступы
+                  height: MediaQuery.of(context).size.height - 100,
                   child: Column(
                     children: [
                       _buildActionButtons(),
+                      const SizedBox(height: 16),
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
@@ -250,7 +334,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: SizedBox(
-                              width: _headerTitles.length * 140, // Фиксированная общая ширина
+                              width: _headerTitles.length * 140,
                               child: Column(
                                 children: [
                                   Stack(
@@ -304,7 +388,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                   Expanded(
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        children: _events.asMap().entries.map((entry) {
+                                        children: _filterEvents().asMap().entries.map((entry) {
                                           final index = entry.key;
                                           final event = entry.value;
                                           return GestureDetector(

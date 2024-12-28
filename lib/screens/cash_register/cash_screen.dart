@@ -58,7 +58,6 @@ class _CashScreenState extends State<CashScreen> {
     for (var event in events) {
       final currency = event['currency'];
       final type = event['type'];
-      final amount = double.parse(event['amount'].toString());
       final total = double.parse(event['total'].toString());
 
       if (!reportMap.containsKey(currency)) {

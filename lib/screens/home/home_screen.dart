@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:exchanger/models/user.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../components/buttons/custom_button.dart';
 import '../../components/buttons/icon_toggle_button.dart';
 import '../../components/dropdowns/custom_dropdown.dart';
@@ -98,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         });
       }
     } catch (e) {
-      print('Error in _initialFetchCurrencies: $e');
       if (mounted) {
         setState(() {
           _currencies = ['Валюта'];

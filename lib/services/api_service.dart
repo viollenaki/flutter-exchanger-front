@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/user.dart';
 
 class ApiService {
-  // static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
-  static const String _baseUrl = 'http://localhost:8000/api/v1';
+  static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
+  // static const String _baseUrl = 'http://localhost:8000/api/v1';
 
   static Future<List<String>> fetchCurrencies() async {
     final response = await http.get(Uri.parse('$_baseUrl/currencies'));

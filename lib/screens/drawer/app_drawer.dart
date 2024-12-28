@@ -146,7 +146,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.list),
+            leading: Icon(Icons.money_sharp),
             title: Text('Касса'),
             onTap: () {
               Navigator.pop(context);

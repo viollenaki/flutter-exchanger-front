@@ -4,6 +4,7 @@ import '../../models/user.dart';
 import '../events/events_screen.dart';
 import '../currencies/currencies_screen.dart';
 import '../users/users_screen.dart';
+import '../cash_register/cash_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final VoidCallback? onDrawerOpened;
@@ -142,6 +143,14 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => EventsScreen()));
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.list),
+            title: Text('Касса'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CashScreen()));
             },
           ),
           ExpansionTile(

@@ -1,8 +1,6 @@
-
 import 'package:exchanger/components/dropdowns/custom_dropdown.dart';
 import 'package:exchanger/components/inputs/custom_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 
 import 'buttons/icon_toggle_button.dart';
@@ -23,7 +21,6 @@ class _EditEventDialogState extends State<EditEventDialog> {
   late bool isUpSelected;
   late bool isDownSelected;
   late String selectedCurrency;
-  late String selectedDate;
   List<String> currencies = [];
 
   @override
@@ -35,7 +32,6 @@ class _EditEventDialogState extends State<EditEventDialog> {
     isUpSelected = widget.event['type'] == 'Продажа';
     isDownSelected = widget.event['type'] == 'Покупка';
     selectedCurrency = widget.event['currency'];
-    selectedDate = widget.event['date'];
     currencies = [selectedCurrency];
   }
 
@@ -54,6 +50,22 @@ class _EditEventDialogState extends State<EditEventDialog> {
     totalController.text = total.toStringAsFixed(2);
   }
 
+  Future <bool> _editEvent() async {
+    final String type = isUpSelected ? 'Продажа' : 'Покупка';
+    final double amount = double.tryParse(quantityController.text) ?? 0;
+    final double rate = double.tryParse(rateController.text) ?? 0;
+    final double total = double.tryParse(totalController.text) ?? 0;
+    bool status = await ApiService.editEvent(
+      widget.event['id'],
+      type,
+      selectedCurrency,
+      amount,
+      rate,
+      total,
+    );
+    return status;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -67,23 +79,6 @@ class _EditEventDialogState extends State<EditEventDialog> {
             Text(
               'Редактировать запись',
               style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.parse(selectedDate),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2101),
-                );
-                if (picked != null) {
-                  setState(() {
-                    selectedDate = DateFormat('yyyy-MM-dd').format(picked);
-                  });
-                }
-              },
-              child: Text(selectedDate),
             ),
             const SizedBox(height: 16),
             Row(
@@ -151,8 +146,17 @@ class _EditEventDialogState extends State<EditEventDialog> {
                 ),
                 SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implement update functionality
+                  onPressed: () async {
+                    bool status = await _editEvent();
+                    if (status) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Запись успешно обновлена')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Не удалось обновить запись')),
+                      );
+                    }
                     Navigator.pop(context);
                   },
                   child: Text('Сохранить'),

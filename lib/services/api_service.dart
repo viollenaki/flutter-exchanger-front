@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../models/user.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
+  // static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
+  static const String _baseUrl = 'http://localhost:8000/api/v1';
 
   static Future<List<String>> fetchCurrencies() async {
     final response = await http.get(Uri.parse('$_baseUrl/currencies'));
@@ -52,7 +55,9 @@ class ApiService {
     }
   }
 
-  static Future<void> addEvent(String type, String currency, double amount, String date, double rate, double total) async {
+  static Future<void> addEvent(String type, String currency, double amount, double rate, double total) async {
+    final now = DateTime.now();
+    print(DateFormat('HH:mm').format(now));
     final response = await http.post(
       Uri.parse('$_baseUrl/events'),
       headers: {'Content-Type': 'application/json'},
@@ -60,7 +65,7 @@ class ApiService {
         'type': type,
         'currency': currency,
         'amount': amount,
-        'date': date,
+        'date': DateFormat('HH:mm').format(now),
         'rate': rate,
         'total': total,
       }),
@@ -190,6 +195,26 @@ class ApiService {
       return true;
     } else {
       return false;
+    }
+  }
+
+  static Future<bool> editEvent(int id, String type, String currency, double amount, double rate, double total) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/events/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'type': type,
+        'currency': currency,
+        'amount': amount,
+        'rate': rate,
+        'total': total,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      return false;      
+    }else{
+      return true;
     }
   }
 }

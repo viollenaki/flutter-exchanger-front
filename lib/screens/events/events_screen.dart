@@ -21,11 +21,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   String? _selectedCurrency;
   String? _selectedType;
   int? _selectedRowIndex;
-  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
   late AnimationController _animationController;
 
   final Map<String, String> _headerTitles = {
-    'date': 'Дата',
+    'date': 'Время',
     'type': 'Тип',
     'currency': 'Валюта',
     'amount': 'Количество',
@@ -55,6 +55,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       final events = await ApiService.fetchEvents();
       setState(() {
         _events = events;
+        print(_events[0]);
         _isLoading = false;
       });
     } catch (e) {
@@ -154,6 +155,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       context: context,
       builder: (context) => EditEventDialog(event: event),
     );
+    await _fetchEvents();
   }
 
   Future<void> _showFilterDialog() async {
@@ -163,7 +165,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
         currencies: _currencies,
         selectedCurrency: _selectedCurrency,
         selectedType: _selectedType,
-        selectedDate: _selectedDate,
+        selectedTime: _selectedTime,
       ),
     );
 
@@ -171,7 +173,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       setState(() {
         _selectedCurrency = result['currency'];
         _selectedType = result['type'];
-        _selectedDate = result['date'];
+        _selectedTime = result['time'];
       });
     }
   }
@@ -257,29 +259,17 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     if (_selectedType != null && _selectedType!.isNotEmpty) {
       filteredEvents = filteredEvents.where((event) => event['type'] == _selectedType).toList();
     }
-    if (_selectedDate != null) {
+    if (_selectedTime != null) {
       filteredEvents = filteredEvents.where((event) {
-        final eventDate = DateTime.parse(event['date']);
-        return eventDate.year == _selectedDate!.year &&
-               eventDate.month == _selectedDate!.month &&
-               eventDate.day == _selectedDate!.day;
+        final eventTime = event['date'].toString().split(':');
+        final eventHour = int.parse(eventTime[0]);
+        final eventMinute = int.parse(eventTime[1]);
+        
+        return eventHour > _selectedTime!.hour || 
+               (eventHour == _selectedTime!.hour && eventMinute >= _selectedTime!.minute);
       }).toList();
     }
     return filteredEvents;
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   @override
@@ -397,7 +387,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                               child: Row(
                                                 children: _headerTitles.keys.map((key) => 
                                                   custom.TableCell(
-                                                    event[key].toString(), 
+                                                    key == 'date' 
+                                                        ? event[key].toString().substring(0, 5) // Take only first 5 characters (HH:mm)
+                                                        : event[key].toString(), 
                                                     width: 140,
                                                   )
                                                 ).toList(),

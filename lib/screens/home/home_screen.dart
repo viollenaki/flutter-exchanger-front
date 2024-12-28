@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isDownSelected = false;
   String _selectedCurrency = 'Валюта';
   List<String> _currencies = ['Валюта'];
-  String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   late final AnimationController _backgroundController;
   late final Animation<double> _animation;
   bool _isInitialLoading = true; // Add new variable for initial loading state
@@ -124,23 +123,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    if (!mounted) return;
-    
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    
-    if (picked != null && mounted) {
-      setState(() {
-        _selectedDate = DateFormat('yyyy-MM-dd').format(picked);
-      });
-    }
-  }
-
   @override
   void dispose() {
     _backgroundController.stop();
@@ -161,7 +143,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _clearFields() {
     setState(() {
       _selectedCurrency = 'Валюта';
-      _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
       _isUpSelected = false;
       _isDownSelected = false;
     });
@@ -207,7 +188,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         type,
         _selectedCurrency,
         double.parse(_quantityController.text),
-        _selectedDate,
         double.parse(_rateController.text),
         double.parse(_totalController.text),
       );
@@ -329,10 +309,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         else
                           Column(
                             children: [
-                              ElevatedButton(
-                                onPressed: () => _selectDate(context),
-                                child: Text(_selectedDate),
-                              ),
                               SizedBox(height: 16),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,

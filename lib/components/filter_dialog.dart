@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dropdowns/custom_dropdown.dart';
 import 'buttons/custom_button.dart';
 
@@ -7,14 +6,14 @@ class FilterDialog extends StatefulWidget {
   final List<String> currencies;
   final String? selectedCurrency;
   final String? selectedType;
-  final DateTime? selectedDate;
+  final TimeOfDay? selectedTime; 
 
   const FilterDialog({
     super.key,
     required this.currencies,
     this.selectedCurrency,
     this.selectedType,
-    this.selectedDate,
+    this.selectedTime,  
   });
 
   @override
@@ -24,26 +23,24 @@ class FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<FilterDialog> {
   late String? _selectedCurrency;
   late String? _selectedType;
-  late DateTime? _selectedDate;
+  late TimeOfDay? _selectedTime;  
 
   @override
   void initState() {
     super.initState();
     _selectedCurrency = widget.selectedCurrency;
     _selectedType = widget.selectedType;
-    _selectedDate = widget.selectedDate;
+    _selectedTime = widget.selectedTime;  // Add this
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      initialTime: _selectedTime ?? TimeOfDay.now(),
     );
     if (picked != null) {
       setState(() {
-        _selectedDate = picked;
+        _selectedTime = picked;
       });
     }
   }
@@ -99,16 +96,16 @@ class _FilterDialogState extends State<FilterDialog> {
               children: [
                 Expanded(
                   child: CustomButton(
-                    onPressed: () => _selectDate(context),
-                    text: _selectedDate == null
-                        ? 'Выберите дату'
-                        : DateFormat('yyyy-MM-dd').format(_selectedDate!),
+                    onPressed: () => _selectTime(context),
+                    text: _selectedTime == null
+                        ? 'Выберите время'
+                        : '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
                   ),
                 ),
-                if (_selectedDate != null) ...[
+                if (_selectedTime != null) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    onPressed: () => setState(() => _selectedDate = null),
+                    onPressed: () => setState(() => _selectedTime = null),
                     icon: const Icon(Icons.close, color: Colors.red),
                   ),
                 ],
@@ -127,7 +124,7 @@ class _FilterDialogState extends State<FilterDialog> {
                   onPressed: () => Navigator.pop(context, {
                     'currency': _selectedCurrency,
                     'type': _selectedType,
-                    'date': _selectedDate,
+                    'time': _selectedTime,  // Add this
                   }),
                   child: const Text('Применить'),
                 ),

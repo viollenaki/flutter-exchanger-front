@@ -178,4 +178,18 @@ class ApiService {
       throw Exception('Failed to load user details');
     }
   }
+
+  static Future<bool> clearAll(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/clear-all'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'username': username, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }

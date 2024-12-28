@@ -1,3 +1,4 @@
+import 'package:exchanger/services/api_service.dart';
 import 'package:flutter/material.dart';
 import '../../models/user.dart';
 import '../events/events_screen.dart';
@@ -11,6 +12,86 @@ class AppDrawer extends StatelessWidget {
     super.key,
     this.onDrawerOpened,
   });
+
+  Future<void> showClearConfirmationDialog(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Подтверждение'),
+          content: Text('Вы уверены, что хотите очистить все данные?'),
+          actions: [
+            TextButton(
+              child: Text('Отмена'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Да'),
+              onPressed: () async {
+                // Close first dialog
+                Navigator.of(context).pop();
+                
+                // Show second dialog
+                final loginController = TextEditingController();
+                final passwordController = TextEditingController();
+                
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Авторизация Супер-Админа'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: loginController,
+                            decoration: InputDecoration(labelText: 'Логин'),
+                          ),
+                          TextField(
+                            controller: passwordController,
+                            decoration: InputDecoration(labelText: 'Пароль'),
+                            obscureText: true,
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          child: Text('Отмена'),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        TextButton(
+                          child: Text('Подтвердить'),
+                          onPressed: () async {
+                            bool isCleared = await ApiService.clearAll(
+                              loginController.text,
+                              passwordController.text,
+                            );
+                            
+                            if (isCleared) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Данные успешно очищены')),
+                              );
+                            } else {
+                              Navigator.of(context).pop();
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Неверные учетные данные супер-админа')),
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +162,14 @@ class AppDrawer extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (context) => CurrenciesScreen()));
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete),
+                title: Text('Очистить'),
+                onTap: () {
+                  Navigator.pop(context);
+                  showClearConfirmationDialog(context);
                 },
               ),
             ],

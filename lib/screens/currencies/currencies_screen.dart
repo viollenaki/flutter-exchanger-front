@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:exchanger/components/background/animated_background.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import '../../components/header_cell.dart';
@@ -279,79 +280,81 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
-      body: SafeArea(
-        child: _isLoading
-            ? Column(
-                children: List.generate(
-                  10,
-                  (index) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: ShimmerLoading(
-                      width: double.infinity,
-                      height: 50,
+      body: AnimatedBackground(
+        child: SafeArea(
+          child: _isLoading
+              ? Column(
+                  children: List.generate(
+                    10,
+                    (index) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: ShimmerLoading(
+                        width: double.infinity,
+                        height: 50,
+                      ),
                     ),
                   ),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height - 150,
-                  child: Column(
-                    children: [
-                      _buildActionButtons(),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey[900],
-                          ),
-                          child: Column(
-                            children: [
-                              Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                    child: Container(
-                                      color: Colors.grey[800],
-                                      child: Row(
-                                        children: _headerTitles.entries.map((entry) => 
-                                          Expanded(
-                                            child: HeaderCell(
-                                              entry.value, 
-                                              width: MediaQuery.of(context).size.width / _headerTitles.length,
-                                            ),
-                                          ),
-                                        ).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned.fill(
-                                    child: ClipRRect(
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height - 150,
+                    child: Column(
+                      children: [
+                        _buildActionButtons(),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[900],
+                            ),
+                            child: Column(
+                              children: [
+                                Stack(
+                                  children: [
+                                    ClipRRect(
                                       borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(8),
                                         topRight: Radius.circular(8),
                                       ),
                                       child: Container(
-                                        color: Colors.transparent,
+                                        color: Colors.grey[800],
                                         child: Row(
-                                          children: List.generate(
-                                            _headerTitles.length,
-                                            (index) => Expanded(
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  borderRadius: index == 0
-                                                      ? const BorderRadius.only(topLeft: Radius.circular(8))
-                                                      : index == _headerTitles.length - 1
-                                                          ? const BorderRadius.only(topRight: Radius.circular(8))
-                                                          : BorderRadius.zero,
-                                                  color: Colors.transparent,
+                                          children: _headerTitles.entries.map((entry) => 
+                                            Expanded(
+                                              child: HeaderCell(
+                                                entry.value, 
+                                                width: MediaQuery.of(context).size.width / _headerTitles.length,
+                                              ),
+                                            ),
+                                          ).toList(),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned.fill(
+                                      child: ClipRRect(
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(8),
+                                          topRight: Radius.circular(8),
+                                        ),
+                                        child: Container(
+                                          color: Colors.transparent,
+                                          child: Row(
+                                            children: List.generate(
+                                              _headerTitles.length,
+                                              (index) => Expanded(
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius: index == 0
+                                                        ? const BorderRadius.only(topLeft: Radius.circular(8))
+                                                        : index == _headerTitles.length - 1
+                                                            ? const BorderRadius.only(topRight: Radius.circular(8))
+                                                            : BorderRadius.zero,
+                                                    color: Colors.transparent,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -359,48 +362,48 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: ListView.builder(
-                                  itemCount: _currencies.length,
-                                  itemBuilder: (context, index) {
-                                    final currency = _currencies[index];
-                                    return GestureDetector(
-                                      onTap: () => _handleRowSelection(index),
-                                      child: Container(
-                                        color: _selectedRowIndex == index 
-                                          ? Colors.blue.withOpacity(0.2) 
-                                          : null,
-                                        child: Row(
-                                          children: _headerTitles.keys.map((key) => 
-                                            Expanded(
-                                              child: custom.TableCell(
-                                                currency, 
-                                                width: MediaQuery.of(context).size.width / _headerTitles.length, // Adjust width dynamically
-                                              ),
-                                            ),
-                                          ).toList(),
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                  ],
                                 ),
-                              ),
-                            ],
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: _currencies.length,
+                                    itemBuilder: (context, index) {
+                                      final currency = _currencies[index];
+                                      return GestureDetector(
+                                        onTap: () => _handleRowSelection(index),
+                                        child: Container(
+                                          color: _selectedRowIndex == index 
+                                            ? Colors.blue.withOpacity(0.2) 
+                                            : null,
+                                          child: Row(
+                                            children: _headerTitles.keys.map((key) => 
+                                              Expanded(
+                                                child: custom.TableCell(
+                                                  currency, 
+                                                  width: MediaQuery.of(context).size.width / _headerTitles.length, // Adjust width dynamically
+                                                ),
+                                              ),
+                                            ).toList(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16), // Add some space between the table and the button
-                      CustomButton(
-                        onPressed: _showAddDialog,
-                        text: 'Добавить',
-                      ),
-                    ],
+                        const SizedBox(height: 16), // Add some space between the table and the button
+                        CustomButton(
+                          onPressed: _showAddDialog,
+                          text: 'Добавить',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }

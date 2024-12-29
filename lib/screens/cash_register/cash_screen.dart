@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:exchanger/components/background/animated_background.dart';
 import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
 import '../../components/loading/shimmer_loading.dart';
@@ -174,74 +175,76 @@ class _CashScreenState extends State<CashScreen> {
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
-      body: SafeArea(
-        child: _isLoading
-            ? Column(
-                children: List.generate(
-                  10,
-                  (index) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: ShimmerLoading(
-                      width: double.infinity,
-                      height: 50,
+      body: AnimatedBackground(
+        child: SafeArea(
+          child: _isLoading
+              ? Column(
+                  children: List.generate(
+                    10,
+                    (index) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: ShimmerLoading(
+                        width: double.infinity,
+                        height: 50,
+                      ),
                     ),
                   ),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.grey[900],
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: _headerTitles.length * 140,
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: _headerTitles.entries.map((entry) => 
-                                    HeaderCell(
-                                      entry.value, 
-                                      width: 140,
-                                    )
-                                  ).toList(),
-                                ),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: _cashReport.map((report) {
-                                        return Row(
-                                          children: _headerTitles.keys.map((key) => 
-                                            custom.TableCell(
-                                              report[key].toString(),
-                                              width: 140,
-                                            )
-                                          ).toList(),
-                                        );
-                                      }).toList(),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[900],
+                          ),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: _headerTitles.length * 140,
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: _headerTitles.entries.map((entry) => 
+                                      HeaderCell(
+                                        entry.value, 
+                                        width: 140,
+                                      )
+                                    ).toList(),
+                                  ),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        children: _cashReport.map((report) {
+                                          return Row(
+                                            children: _headerTitles.keys.map((key) => 
+                                              custom.TableCell(
+                                                report[key].toString(),
+                                                width: 140,
+                                              )
+                                            ).toList(),
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    _buildTotalsSection(),
-                  ],
+                      SizedBox(height: 16),
+                      _buildTotalsSection(),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

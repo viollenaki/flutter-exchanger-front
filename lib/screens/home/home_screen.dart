@@ -1,5 +1,4 @@
-import 'dart:math';
-import 'dart:ui';
+
 import 'package:exchanger/models/user.dart';
 import 'package:flutter/material.dart';
 import '../../components/buttons/custom_button.dart';
@@ -9,6 +8,7 @@ import '../../components/inputs/custom_text_field.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../drawer/app_drawer.dart';
 import '../../services/api_service.dart';
+import 'package:exchanger/components/background/animated_background.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,8 +26,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isDownSelected = false;
   String _selectedCurrency = 'Валюта';
   List<String> _currencies = ['Валюта'];
-  late final AnimationController _backgroundController;
-  late final Animation<double> _animation;
   bool _isInitialLoading = true; // Add new variable for initial loading state
 
   final GlobalKey<CustomDropdownState> _dropdownKey = GlobalKey<CustomDropdownState>();
@@ -37,32 +35,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     
-    _backgroundController = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
-
-    _animation = Tween<double>(
-      begin: -1.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _backgroundController,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
-    _backgroundController.addStatusListener((status) {
-      if (!mounted) return;
-      if (status == AnimationStatus.completed) {
-        _backgroundController.reverse();
-      } else if (status == AnimationStatus.dismissed) {
-        _backgroundController.forward();
-      }
-    });
-
-    _backgroundController.forward();
-
     _initFuture = _initialFetchCurrencies(); 
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,8 +95,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _backgroundController.stop();
-    _backgroundController.dispose();
     _quantityController.dispose();
     _rateController.dispose();
     _totalController.dispose();
@@ -249,41 +219,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
             extendBodyBehindAppBar: true,
-            body: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                final position = (_animation.value + 1) / 2;
-                return Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: const [
-                            Color(0xFF1a1a1a),
-                            Color(0xFF242424),
-                            Color(0xFF1a1a1a),
-                          ],
-                          stops: [
-                            position * 0.2,
-                            position,
-                            position * 1.8,
-                          ],
-                          transform: GradientRotation(pi / 4),
-                        ),
-                      ),
-                    ),
-                    BackdropFilter(
-                      filter: ImageFilter.blur(
-                        sigmaX: 50.0,
-                        sigmaY: 50.0,
-                      ),
-                      child: child,
-                    ),
-                  ],
-                );
-              },
+            body: AnimatedBackground( // Заменяем старую анимацию на новую
               child: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(

@@ -54,52 +54,58 @@ class _CashScreenState extends State<CashScreen> {
 
   List<Map<String, dynamic>> _processEvents(List<dynamic> events) {
     Map<String, Map<String, dynamic>> reportMap = {};
+    _totalProfit = 0.0;
 
     for (var event in events) {
       final currency = event['currency'];
       final type = event['type'];
       final total = double.parse(event['total'].toString());
+      final amount = double.parse(event['amount'].toString());
 
       if (!reportMap.containsKey(currency)) {
         reportMap[currency] = {
           'currency': currency,
           'buyTotal': 0.0,
           'buyCount': 0,
+          'buyAmount': 0.0,  
           'sellTotal': 0.0,
           'sellCount': 0,
+          'sellAmount': 0.0,
         };
       }
 
       if (type == 'Покупка') {
         reportMap[currency]!['buyTotal'] += total;
         reportMap[currency]!['buyCount']++;
+        reportMap[currency]!['buyAmount'] += amount;
       } else if (type == 'Продажа') {
         reportMap[currency]!['sellTotal'] += total;
         reportMap[currency]!['sellCount']++;
+        reportMap[currency]!['sellAmount'] += amount;
       }
     }
 
-    // Calculate totals after processing events
     _totalSum = reportMap.values.fold(0.0, (sum, report) => 
       sum + report['buyTotal'] + report['sellTotal']
     );
     
     final reportList = reportMap.values.map((report) {
-      final buyAverage = report['buyCount'] > 0 
-          ? report['buyTotal'] / report['buyCount'] 
+      final buyRate = report['buyAmount'] > 0 
+          ? report['buyTotal'] / report['buyAmount']
           : 0.0;
-      final sellAverage = report['sellCount'] > 0 
-          ? report['sellTotal'] / report['sellCount'] 
+
+      final sellRate = report['sellAmount'] > 0 
+          ? report['sellTotal'] / report['sellAmount']
           : 0.0;
       
-      final profit = report['buyCount'] * (sellAverage - buyAverage);
+      final profit = report['sellAmount'] * (sellRate - buyRate);
       _totalProfit += profit;
       
       return {
         ...report,
-        'buyAverage': buyAverage,
-        'sellAverage': sellAverage,
-        'profit': profit,
+        'buyAverage': buyRate.toStringAsFixed(2),
+        'sellAverage': sellRate.toStringAsFixed(2),
+        'profit': profit.toStringAsFixed(2),
       };
     }).toList();
 

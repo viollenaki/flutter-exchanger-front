@@ -4,6 +4,7 @@ import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
+import 'package:exchanger/services/export_to_pdf.dart';
 
 class CashScreen extends StatefulWidget {
   const CashScreen({super.key});
@@ -245,6 +246,15 @@ class _CashScreenState extends State<CashScreen> {
                   ),
                 ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await ExportToPdf.exportTableToPdf(_cashReport, _headerTitles, 'Отчет по кассе');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Отчет по кассе экспортирован в PDF')),
+          );
+        },
+        child: const Icon(Icons.picture_as_pdf),
       ),
     );
   }

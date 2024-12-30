@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import 'package:exchanger/components/background/animated_background.dart';
+import 'package:exchanger/services/export_to_pdf.dart';
 
 import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
@@ -442,6 +443,15 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   ),
                 ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await ExportToPdf.exportTableToPdf(_filterEvents(), _headerTitles, 'Отчет о событиях');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Таблица экспортирована в PDF')),
+          );
+        },
+        child: const Icon(Icons.picture_as_pdf),
       ),
     );
   }

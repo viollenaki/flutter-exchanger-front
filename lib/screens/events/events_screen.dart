@@ -58,7 +58,6 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       final events = await ApiService.fetchEvents();
       setState(() {
         _events = events;
-        print(_events[0]);
         _isLoading = false;
       });
     } catch (e) {

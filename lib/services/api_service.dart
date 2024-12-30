@@ -7,6 +7,8 @@ class ApiService {
   // static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
   static const String _baseUrl = 'http://localhost:8000/api/v1';
 
+  static Map<String, bool> _superUserCache = {};
+
   static Future<List<String>> fetchCurrencies() async {
     final response = await http.get(Uri.parse('$_baseUrl/currencies'));
 
@@ -215,5 +217,24 @@ class ApiService {
     }else{
       return true;
     }
+  }
+
+  static Future<bool> isSuperUser(String username) async {
+    if (_superUserCache.containsKey(username)) {
+      return _superUserCache[username]!;
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/super-user-check/$username'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    
+    final result = response.statusCode == 204;
+    _superUserCache[username] = result;
+    return result;
+  }
+
+  static void clearSuperUserCache() {
+    _superUserCache.clear();
   }
 }

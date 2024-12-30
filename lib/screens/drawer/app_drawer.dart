@@ -8,14 +8,37 @@ import '../currencies/currencies_screen.dart';
 import '../users/users_screen.dart';
 import '../cash_register/cash_screen.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   final VoidCallback? onDrawerOpened;
-  final formKey = GlobalKey<FormState>();
 
-  AppDrawer({
+  const AppDrawer({
     super.key,
     this.onDrawerOpened,
   });
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  bool? _isSuperAdmin;
+  final formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSuperUser();
+  }
+
+  Future<void> _checkSuperUser() async {
+    final username = UserManager().getCurrentUser();
+    if (username != null) {
+      final result = await ApiService.isSuperUser(username);
+      setState(() {
+        _isSuperAdmin = result;
+      });
+    }
+  }
 
   String? _validateSuperAdminField(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
@@ -276,10 +299,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      onDrawerOpened?.call();
-    });
-
+    widget.onDrawerOpened?.call();
     final username = UserManager().getCurrentUser();
 
     return Drawer(
@@ -337,14 +357,15 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.settings),
             title: Text('Настройки'),
             children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.person),
-                title: Text('Пользователи'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UsersScreen()));
-                },
-              ),
+              if (_isSuperAdmin ?? false)
+                ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Пользователи'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => UsersScreen()));
+                  },
+                ),
               ListTile(
                 leading: Icon(Icons.monetization_on),
                 title: Text('Валюты'),
@@ -353,14 +374,15 @@ class AppDrawer extends StatelessWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => CurrenciesScreen()));
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.delete),
-                title: Text('Очистить'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showClearConfirmationDialog(context);
-                },
-              ),
+              if (_isSuperAdmin ?? false)
+                ListTile(
+                  leading: Icon(Icons.delete),
+                  title: Text('Очистить'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showClearConfirmationDialog(context);
+                  },
+                ),
             ],
           ),
         ],

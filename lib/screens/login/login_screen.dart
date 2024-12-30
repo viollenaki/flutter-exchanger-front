@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import '../../components/buttons/custom_button.dart';
 import '../../services/api_service.dart';
 import '../../models/user.dart';
+import '../../logo/custom_logo.dart'; // Import the custom logo widget
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -323,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.start, // Change from center to start
                   children: [
                     const SizedBox(height: 50.0), // Add some space at the top
-                    const FlutterLogo(size: 100),
+                    const CustomLogo(), // Use the custom logo widget
                     const SizedBox(height: 32.0),
                     _buildUsernameField(),
                     const SizedBox(height: 16.0),

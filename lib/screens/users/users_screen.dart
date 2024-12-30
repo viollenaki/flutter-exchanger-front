@@ -1,4 +1,6 @@
+import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import '../../components/header_cell.dart';
@@ -19,6 +21,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   int? _selectedRowIndex;
   bool _isSuperAdmin = false;
   late AnimationController _animationController;
+  final formKey = GlobalKey<FormState>();
 
   final Map<String, String> _headerTitles = {
     'username': 'Имя пользователя',
@@ -66,7 +69,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       await _fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка добавления пользователя')),
+        SnackBar(content: Text('$e')),
       );
     }
   }
@@ -122,235 +125,448 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final TextEditingController emailController = TextEditingController(text: userData["email"]);
     String oldUsername = username;
     bool isSuperAdmin = userData["isSuperUser"];
-    final formKey = GlobalKey<FormState>();
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Редактировать пользователя'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Имя пользователя',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите имя пользователя';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Эл. почта',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите эл. почту';
-                        }
-                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                        if (!emailRegex.hasMatch(value)) {
-                          return 'Введите корректный адрес эл. почты';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Пароль (оставьте пустым, если не хотите менять)',
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty && value.length < 8) {
-                          return 'Пароль должен содержать не менее 8 символов';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Text('Суперадмин'),
-                        Checkbox(
-                          value: isSuperAdmin,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              isSuperAdmin = value ?? false;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return CupertinoAlertDialog(
+                title: const Text('Редактировать пользователя'),
+                content: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: _buildFormFields(
+                    context,
+                    usernameController: usernameController,
+                    emailController: emailController,
+                    passwordController: passwordController,
+                    isSuperAdmin: isSuperAdmin,
+                    onSuperAdminChanged: (value) => setState(() => isSuperAdmin = value ?? false),
+                    isEditMode: true,
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Отмена'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('Отмена'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  CupertinoDialogAction(
+                    child: const Text('Сохранить'),
+                    onPressed: () async {
+                      final usernameError = _validateUsername(usernameController.text);
+                      final emailError = _validateEmail(emailController.text);
+                      final passwordError = _validatePassword(passwordController.text, true);
+
+                      if (usernameError == null && emailError == null && passwordError == null) {
+                        await _editUser(
+                          usernameController.text,
+                          oldUsername,
+                          passwordController.text.isNotEmpty ? passwordController.text : '',
+                          isSuperAdmin,
+                          emailController.text
+                        );
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: const Text('Редактировать пользователя'),
+                content: _buildFormFields(
+                  context,
+                  usernameController: usernameController,
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  isSuperAdmin: isSuperAdmin,
+                  onSuperAdminChanged: (value) => setState(() => isSuperAdmin = value ?? false),
+                  isEditMode: true,
                 ),
-                TextButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      await _editUser(usernameController.text, oldUsername, passwordController.text.isNotEmpty ? passwordController.text : '', isSuperAdmin, emailController.text);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: const Text('Сохранить'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Отмена'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        await _editUser(
+                          usernameController.text,
+                          oldUsername,
+                          passwordController.text.isNotEmpty ? passwordController.text : '',
+                          isSuperAdmin,
+                          emailController.text
+                        );
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Сохранить'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
   }
 
   Future<void> _showDeleteDialog(String username) async {
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Удалить пользователя'),
-          content: Text('Вы уверены, что хотите удалить пользователя "$username"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () {
-                _deleteUser(username);
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Удалить пользователя'),
+            content: Text('Вы уверены, что хотите удалить пользователя "$username"?'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('Отмена'),
+                onPressed: () => Navigator.pop(context),
               ),
-              child: const Text('Удалить'),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () {
+                  _deleteUser(username);
+                  Navigator.pop(context);
+                },
+                child: const Text('Удалить'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Удалить пользователя'),
+            content: Text('Вы уверены, что хотите удалить пользователя "$username"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _deleteUser(username);
+                  Navigator.pop(context);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
+                child: const Text('Удалить'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  String? _validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Введите имя пользователя';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Введите эл. почту';
+    }
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Введите корректный адрес эл. почты';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value, bool isEditMode) {
+    if (!isEditMode && (value == null || value.isEmpty)) {
+      return 'Введите пароль';
+    }
+    if (value != null && value.isNotEmpty && value.length < 8) {
+      return 'Пароль должен содержать не менее 8 символов';
+    }
+    return null;
+  }
+
+  Widget _buildFormFields(BuildContext context, {
+    required TextEditingController usernameController,
+    required TextEditingController emailController,
+    required TextEditingController passwordController,
+    required bool isSuperAdmin,
+    required Function(bool?) onSuperAdminChanged,
+    bool isEditMode = false,
+  }) {
+    final theme = Theme.of(context);
+
+    if (theme.isIOS) {
+      // Add state variables for validation error messages
+      String? usernameError;
+      String? emailError;
+      String? passwordError;
+
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CupertinoTextField(
+                controller: usernameController,
+                placeholder: 'Имя пользователя',
+                style: const TextStyle(color: CupertinoColors.white),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: usernameError != null ? CupertinoColors.systemRed : CupertinoColors.systemGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                onChanged: (value) {
+                  setState(() {
+                    usernameError = _validateUsername(value);
+                  });
+                },
+              ),
+              if (usernameError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Text(
+                    usernameError!,
+                    style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              CupertinoTextField(
+                controller: emailController,
+                placeholder: 'Эл. почта',
+                style: const TextStyle(color: CupertinoColors.white),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: emailError != null ? CupertinoColors.systemRed : CupertinoColors.systemGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                onChanged: (value) {
+                  setState(() {
+                    emailError = _validateEmail(value);
+                  });
+                },
+              ),
+              if (emailError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Text(
+                    emailError!,
+                    style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              CupertinoTextField(
+                controller: passwordController,
+                placeholder: isEditMode ? 'Пароль (оставьте пустым, если не хотите менять)' : 'Пароль',
+                obscureText: true,
+                style: const TextStyle(color: CupertinoColors.white),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: passwordError != null ? CupertinoColors.systemRed : CupertinoColors.systemGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                onChanged: (value) {
+                  setState(() {
+                    passwordError = _validatePassword(value, isEditMode);
+                  });
+                },
+              ),
+              if (passwordError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Text(
+                    passwordError!,
+                    style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Суперадмин', style: TextStyle(color: CupertinoColors.white)),
+                  CupertinoSwitch(
+                    value: isSuperAdmin,
+                    onChanged: onSuperAdminChanged,
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      return Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: usernameController,
+              decoration: const InputDecoration(labelText: 'Имя пользователя'),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Введите имя пользователя';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Эл. почта'),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Введите эл. почту';
+                }
+                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                if (!emailRegex.hasMatch(value)) {
+                  return 'Введите корректный адрес эл. почты';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: passwordController,
+              decoration: InputDecoration(
+                labelText: isEditMode ? 'Пароль (оставьте пустым, если не хотите менять)' : 'Пароль',
+              ),
+              obscureText: true,
+              validator: (value) {
+                if (!isEditMode && (value == null || value.isEmpty)) {
+                  return 'Введите пароль';
+                }
+                if (value != null && value.isNotEmpty && value.length < 8) {
+                  return 'Пароль должен содержать не менее 8 символов';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Супер-админ'),
+                Checkbox(
+                  value: isSuperAdmin,
+                  onChanged: onSuperAdminChanged,
+                ),
+              ],
             ),
           ],
-        );
-      },
-    );
+        ),
+      );
+    }
   }
 
   Future<void> _showAddDialog() async {
     final TextEditingController usernameController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Добавить пользователя'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Имя пользователя',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите имя пользователя';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Эл. почта',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите эл. почту';
-                        }
-                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                        if (!emailRegex.hasMatch(value)) {
-                          return 'Введите корректный адрес эл. почты';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Пароль',
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите пароль';
-                        }
-                        if (value.length < 8) {
-                          return 'Пароль должен содержать не менее 8 символов';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Text('Суперадмин'),
-                        Checkbox(
-                          value: _isSuperAdmin,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _isSuperAdmin = value ?? false;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return CupertinoAlertDialog(
+                title: const Text('Добавить пользователя'),
+                content: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: _buildFormFields(
+                    context,
+                    usernameController: usernameController,
+                    emailController: emailController,
+                    passwordController: passwordController,
+                    isSuperAdmin: _isSuperAdmin,
+                    onSuperAdminChanged: (value) => setState(() => _isSuperAdmin = value ?? false),
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Отмена'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('Отмена'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  CupertinoDialogAction(
+                    child: const Text('Добавить'),
+                    onPressed: () async {
+                      final usernameError = _validateUsername(usernameController.text);
+                      final emailError = _validateEmail(emailController.text);
+                      final passwordError = _validatePassword(passwordController.text, false);
+
+                      if (usernameError == null && emailError == null && passwordError == null) {
+                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: const Text('Добавить пользователя'),
+                content: _buildFormFields(
+                  context,
+                  usernameController: usernameController,
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  isSuperAdmin: _isSuperAdmin,
+                  onSuperAdminChanged: (value) => setState(() => _isSuperAdmin = value ?? false),
                 ),
-                TextButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: const Text('Добавить'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Отмена'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      if (formKey.currentState!.validate()) {
+                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Добавить'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
   }
 
   Widget _buildActionButtons() {
@@ -373,7 +589,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         _showEditDialog(_users[_selectedRowIndex!]);
                       }
                     },
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.edit, color: Colors.white),
                     label: const Text('Редактировать'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
@@ -392,7 +608,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         _showDeleteDialog(_users[_selectedRowIndex!]);
                       }
                     },
-                    icon: const Icon(Icons.delete),
+                    icon: const Icon(Icons.delete, color: Colors.white,),
                     label: const Text('Удалить'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,

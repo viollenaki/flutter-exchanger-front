@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final String hintText;
   final bool readOnly;
   final Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters; // Add this line
 
   const CustomTextField({
     super.key,
@@ -14,6 +14,7 @@ class CustomTextField extends StatelessWidget {
     required this.hintText,
     this.readOnly = false,
     this.onChanged,
+    this.inputFormatters, // Add this line
   });
 
   @override
@@ -24,7 +25,7 @@ class CustomTextField extends StatelessWidget {
         controller: controller,
         readOnly: readOnly,
         keyboardType: TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+        inputFormatters: inputFormatters ?? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))], // Modify this line
         decoration: InputDecoration(
           hintText: hintText,
           border: OutlineInputBorder(

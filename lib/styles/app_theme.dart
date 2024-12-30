@@ -1,4 +1,4 @@
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class AppTheme {
@@ -26,7 +26,14 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8.0),
         ),
       ),
-      // ...existing theme properties...
     );
   }
+
+}
+
+extension ThemePlatform on ThemeData {
+  bool get isAndroid => defaultTargetPlatform == TargetPlatform.android;
+  bool get isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+  // bool get isIOS => false; // to test android
+  bool get isWeb => kIsWeb;
 }

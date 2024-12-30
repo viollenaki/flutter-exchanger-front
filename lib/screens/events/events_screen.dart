@@ -1,3 +1,5 @@
+import 'package:exchanger/styles/app_theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
@@ -101,54 +103,82 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   }
 
   Future<bool?> _showDeleteConfirmation() async {
-    return showGeneralDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, animation1, animation2) => Container(),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedAnimation = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        );
+    final theme = Theme.of(context);
+    
+    if (theme.isIOS) {
+      return showCupertinoDialog<bool>(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Реально???'),
+            content: const Text('?!?!?!?!'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('неее :)'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () {
+                  _deleteEvent(_events[_selectedRowIndex!]['id']);
+                  Navigator.of(context).pop(true);
+                },
+                child: const Text('ага :O'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      return showGeneralDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: '',
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation1, animation2) => Container(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack,
+          );
 
-        return ScaleTransition(
-          scale: Tween<double>(begin: 0.8, end: 1.0).animate(curvedAnimation),
-          child: FadeTransition(
-            opacity: animation,
-            child: AlertDialog(
-              backgroundColor: Colors.grey[900],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              title: const Text(
-                'Реально???',
-                style: TextStyle(color: Colors.white),
-              ),
-              content: const Text(
-                '?!?!?!?!',
-                style: TextStyle(color: Colors.white70),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('неее :)'),
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(curvedAnimation),
+            child: FadeTransition(
+              opacity: animation,
+              child: AlertDialog(
+                backgroundColor: Colors.grey[900],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                title: const Text(
+                  'Реально???',
+                  style: TextStyle(color: Colors.white),
                 ),
-                TextButton(
-                  onPressed: () {
-                    _deleteEvent(_events[_selectedRowIndex!]['id']);
-                    Navigator.of(context).pop(true);
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
+                content: const Text(
+                  '?!?!?!?!',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('неее :)'),
                   ),
-                  child: const Text('ага :O'),
-                ),
-              ],
+                  TextButton(
+                    onPressed: () {
+                      _deleteEvent(_events[_selectedRowIndex!]['id']);
+                      Navigator.of(context).pop(true);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                    child: const Text('ага :O'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
 
   Future<void> _showEditDialog(Map<String, dynamic> event) async {

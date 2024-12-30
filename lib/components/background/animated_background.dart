@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class AnimatedBackground extends StatefulWidget {
   final Widget child;
@@ -11,19 +12,26 @@ class AnimatedBackground extends StatefulWidget {
 }
 
 class _AnimatedBackgroundState extends State<AnimatedBackground> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late Ticker _ticker;
   final Random random = Random();
   final List<FinanceSymbol> symbols = [];
+  Duration _lastElapsed = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 33), // ~30 FPS (1000ms / 30)
-      vsync: this,
-    )..repeat();
+    _ticker = createTicker((elapsed) {
+      final deltaTime = elapsed - _lastElapsed;
+      if (deltaTime.inMilliseconds >= 41) { // Approximately 24 FPS
+        setState(() {
+          for (var symbol in symbols) {
+            symbol.updatePosition(deltaTime.inMilliseconds / 1000.0);
+          }
+        });
+        _lastElapsed = elapsed;
+      }
+    })..start();
 
-    // Уменьшаем количество символов
     for (int i = 0; i < 20; i++) {
       symbols.add(FinanceSymbol(
         random,
@@ -35,7 +43,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with SingleTick
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ticker.dispose();
     super.dispose();
   }
 
@@ -44,22 +52,16 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with SingleTick
     return Stack(
       children: [
         Container(
-          color: Colors.black, // Простой черный фон
+          color: Colors.black,
         ),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            return CustomPaint(
-              painter: FinanceSymbolsPainter(
-                symbols: symbols,
-                animation: _controller,
-              ),
-              child: Container(),
-            );
-          },
+        CustomPaint(
+          painter: FinanceSymbolsPainter(
+            symbols: symbols,
+          ),
+          child: Container(),
         ),
         BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), // Уменьшили размытие
+          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
           child: widget.child,
         ),
       ],
@@ -75,6 +77,8 @@ class FinanceSymbol {
   late double size;
   late double speed;
   late double opacity;
+  late double directionX; // New property for X direction
+  late double directionY; // New property for Y direction
 
   static const symbols = ['₽', '\$', '€', '£', '¥', '₣', '₴', '₸', '₮', '₩', '₦', '₲', '₵', '₡', '₢', '₳', '₹', '₺', '₼', '₾', '₿'];
   
@@ -84,7 +88,7 @@ class FinanceSymbol {
 
   void reset(Random random, bool initialPosition, {double? initialX, double? initialY}) {
     x = initialX ?? random.nextDouble();
-    y = initialY ?? (initialPosition ? random.nextDouble() : -0.1);
+    y = initialY ?? (initialPosition ? random.nextDouble() : random.nextDouble());
     symbol = symbols[random.nextInt(symbols.length)];
     
     final colors = [
@@ -94,39 +98,44 @@ class FinanceSymbol {
     ];
     
     color = colors[random.nextInt(colors.length)];
-    size = random.nextDouble() * 20 + 10; // Уменьшили размер
-    speed = random.nextDouble() * 0.001 + 0.002; // Оптимизировали скорость
-    opacity = random.nextDouble() * 0.5 + 0.2; // Уменьшили прозрачность
+    size = random.nextDouble() * 20 + 10;
+    speed = random.nextDouble() * 0.0005 + 0.0005; 
+    opacity = random.nextDouble() * 0.5 + 0.2;
+    
+    // Random direction between -1 and 1
+    directionX = (random.nextDouble() * 2 - 1);
+    directionY = (random.nextDouble() * 2 - 1);
   }
 
   void updatePosition(double deltaTime) {
-    y += speed; // Упростили расчет движения
+    x += directionX * speed;
+    y += directionY * speed;
+    
+    // Wrap around screen edges
+    if (x > 1.1) x = -0.1;
+    if (x < -0.1) x = 1.1;
+    if (y > 1.1) y = -0.1;
+    if (y < -0.1) y = 1.1;
   }
 }
 
 class FinanceSymbolsPainter extends CustomPainter {
   final List<FinanceSymbol> symbols;
-  final Animation<double> animation;
   final Random random = Random();
 
   FinanceSymbolsPainter({
     required this.symbols,
-    required this.animation,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Создаем TextPainter один раз для каждого символа
     final textPainters = <TextPainter>[];
-    
+
     for (var symbol in symbols) {
-      symbol.updatePosition(0.033); // 1/30 секунды для 30 FPS
-      
       if (symbol.y > 1.1) {
         symbol.reset(random, false);
       }
 
-      // Переиспользуем TextPainter
       if (textPainters.length < symbols.length) {
         textPainters.add(TextPainter(
           text: TextSpan(

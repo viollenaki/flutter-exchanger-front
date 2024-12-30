@@ -1,6 +1,8 @@
-
 import 'package:exchanger/models/user.dart';
+import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import '../../components/buttons/custom_button.dart';
 import '../../components/buttons/icon_toggle_button.dart';
 import '../../components/dropdowns/custom_dropdown.dart';
@@ -26,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isDownSelected = false;
   String _selectedCurrency = 'Валюта';
   List<String> _currencies = ['Валюта'];
-  bool _isInitialLoading = true; // Add new variable for initial loading state
+  bool _isInitialLoading = true; 
 
   final GlobalKey<CustomDropdownState> _dropdownKey = GlobalKey<CustomDropdownState>();
   late Future<void> _initFuture;
@@ -133,22 +135,123 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  // New method to build input fields based on platform
+  Widget _buildInputFields(BuildContext context) {
+    final theme = Theme.of(context);
+    final inputFormatters = [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))];
+    
+    if (theme.isIOS) {
+      return Column(
+        children: [
+          CupertinoTextField(
+            controller: _quantityController,
+            placeholder: 'Количество',
+            placeholderStyle: TextStyle(color: CupertinoColors.systemGrey.withOpacity(0.7)),
+            onChanged: (value) => _calculateTotal(),
+            style: TextStyle(color: CupertinoColors.white),
+            decoration: BoxDecoration(
+              border: Border.all(color: CupertinoColors.systemGrey),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: inputFormatters,
+          ),
+          SizedBox(height: 16),
+          CupertinoTextField(
+            controller: _rateController,
+            placeholder: 'Курс',
+            placeholderStyle: TextStyle(color: CupertinoColors.systemGrey.withOpacity(0.7)),
+            onChanged: (value) => _calculateTotal(),
+            style: TextStyle(color: CupertinoColors.white),
+            decoration: BoxDecoration(
+              border: Border.all(color: CupertinoColors.systemGrey),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: inputFormatters,
+          ),
+          SizedBox(height: 16),
+          CupertinoTextField(
+            controller: _totalController,
+            placeholder: 'Общий',
+            placeholderStyle: TextStyle(color: CupertinoColors.systemGrey.withOpacity(0.7)),
+            readOnly: true,
+            style: TextStyle(color: CupertinoColors.white),
+            decoration: BoxDecoration(
+              border: Border.all(color: CupertinoColors.systemGrey),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: inputFormatters,
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          CustomTextField(
+            controller: _quantityController,
+            hintText: 'Количество',
+            onChanged: (value) => _calculateTotal(),
+            inputFormatters: inputFormatters,
+          ),
+          SizedBox(height: 16),
+          CustomTextField(
+            controller: _rateController,
+            hintText: 'Курс',
+            onChanged: (value) => _calculateTotal(),
+            inputFormatters: inputFormatters,
+          ),
+          SizedBox(height: 16),
+          CustomTextField(
+            controller: _totalController,
+            hintText: 'Общий',
+            readOnly: true,
+            inputFormatters: inputFormatters,
+          ),
+        ],
+      );
+    }
+  }
+
+  // New method to show dialog based on platform
+  void _showPlatformDialog(String message) {
+    final theme = Theme.of(context);
+    if (theme.isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
   Future<void> _submitEvent() async {
     if (_selectedCurrency == 'Валюта' || 
         _quantityController.text.isEmpty || 
         _rateController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Заполните все поля')),
-      );
+      _showPlatformDialog('Заполните все поля');
       return;
     }
 
     try {
       final type = _isUpSelected ? 'Продажа' : _isDownSelected ? 'Покупка' : '';
       if (type.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Выберите тип операции (продажа/покупка)')),
-        );
+        _showPlatformDialog('Выберите тип операции (продажа/покупка)');
         return;
       }
 
@@ -161,13 +264,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
 
       _clearFields();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Событие успешно добавлено')),
-      );
+      _showPlatformDialog('Событие успешно добавлено');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
+      _showPlatformDialog('Ошибка: $e');
     }
   }
 
@@ -251,12 +350,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     icon: Icons.arrow_upward,
                                     isSelected: _isUpSelected,
                                     onPressed: _selectUp,
+                                    selectedColor: Theme.of(context).primaryColor, // Add this line
                                   ),
                                   SizedBox(width: 16),
                                   IconToggleButton(
                                     icon: Icons.arrow_downward,
                                     isSelected: _isDownSelected,
                                     onPressed: _selectDown,
+                                    selectedColor: Theme.of(context).primaryColor, // Add this line
                                   ),
                                 ],
                               ),
@@ -273,23 +374,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 onMenuOpened: _fetchCurrencies,
                               ),
                               SizedBox(height: 16),
-                              CustomTextField(
-                                controller: _quantityController,
-                                hintText: 'Количество',
-                                onChanged: (value) => _calculateTotal(),
-                              ),
-                              SizedBox(height: 16),
-                              CustomTextField(
-                                controller: _rateController,
-                                hintText: 'Курс',
-                                onChanged: (value) => _calculateTotal(),
-                              ),
-                              SizedBox(height: 16),
-                              CustomTextField(
-                                controller: _totalController,
-                                hintText: 'Общий',
-                                readOnly: true,
-                              ),
+                              _buildInputFields(context), // Use the new method
                               SizedBox(height: 16),
                               CustomButton(
                                 onPressed: _submitEvent,

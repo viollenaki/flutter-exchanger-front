@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:exchanger/components/background/animated_background.dart';
+import 'package:exchanger/styles/app_theme.dart';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import '../../components/header_cell.dart';
@@ -18,6 +20,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
   List<String> _currencies = [];
   int? _selectedRowIndex;
   late AnimationController _animationController;
+  final formKey = GlobalKey<FormState>();
 
   final Map<String, String> _headerTitles = {
     'currency': 'Валюта',
@@ -114,101 +117,247 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
     }
   }
 
+  String? _validateCurrency(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Введите название валюты';
+    }
+    if (value.length < 2) {
+      return 'Название валюты должно содержать минимум 2 символа';
+    }
+    return null;
+  }
+
+  Widget _buildCurrencyField(
+    BuildContext context,
+    TextEditingController controller,
+    bool isEditMode,
+  ) {
+    final theme = Theme.of(context);
+    String? currencyError;
+
+    if (theme.isIOS) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CupertinoTextField(
+                controller: controller,
+                placeholder: 'Название валюты',
+                style: const TextStyle(color: CupertinoColors.white),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: currencyError != null ? CupertinoColors.systemRed : CupertinoColors.systemGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                onChanged: (value) {
+                  setState(() {
+                    currencyError = _validateCurrency(value);
+                  });
+                },
+              ),
+              if (currencyError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Text(
+                    currencyError!,
+                    style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    } else {
+      return Form(
+        key: formKey,
+        child: TextFormField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Название валюты'),
+          validator: _validateCurrency,
+        ),
+      );
+    }
+  }
+
   Future<void> _showEditDialog(String currency) async {
     final TextEditingController controller = TextEditingController(text: currency);
     String oldCurrency = currency;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Редактировать валюту'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Название валюты',
+
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Редактировать валюту'),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: _buildCurrencyField(context, controller, true),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _editCurrentcy(controller.text, oldCurrency);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Сохранить'),
-            ),
-          ],
-        );
-      },
-    );
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('Отмена'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              CupertinoDialogAction(
+                child: const Text('Сохранить'),
+                onPressed: () async {
+                  final error = _validateCurrency(controller.text);
+                  if (error == null) {
+                    await _editCurrentcy(controller.text, oldCurrency);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Редактировать валюту'),
+            content: _buildCurrencyField(context, controller, true),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    await _editCurrentcy(controller.text, oldCurrency);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Сохранить'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   Future<void> _showDeleteDialog(String currency) async {
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Удалить валюту'),
-          content: Text('Вы уверены, что хотите удалить валюту "$currency"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () {
-                _deleteCurrency(currency);
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Удалить валюту'),
+            content: Text('Вы уверены, что хотите удалить валюту "$currency"?'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('Отмена'),
+                onPressed: () => Navigator.pop(context),
               ),
-              child: const Text('Удалить'),
-            ),
-          ],
-        );
-      },
-    );
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () {
+                  _deleteCurrency(currency);
+                  Navigator.pop(context);
+                },
+                child: const Text('Удалить'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Удалить валюту'),
+            content: Text('Вы уверены, что хотите удалить валюту "$currency"?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _deleteCurrency(currency);
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
+                child: const Text('Удалить'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   Future<void> _showAddDialog() async {
     final TextEditingController controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Добавить валюту'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Название валюты',
+
+    if (Theme.of(context).isIOS) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Добавить валюту'),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: _buildCurrencyField(context, controller, false),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _addCurrency(controller.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Добавить'),
-            ),
-          ],
-        );
-      },
-    );
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('Отмена'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              CupertinoDialogAction(
+                child: const Text('Добавить'),
+                onPressed: () async {
+                  final error = _validateCurrency(controller.text);
+                  if (error == null) {
+                    await _addCurrency(controller.text);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Добавить валюту'),
+            content: _buildCurrencyField(context, controller, false),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    await _addCurrency(controller.text);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Добавить'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   Widget _buildActionButtons() {
@@ -231,7 +380,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                         _showEditDialog(_currencies[_selectedRowIndex!]);
                       }
                     },
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.edit, color: Colors.white,),
                     label: const Text('Редактировать'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
@@ -250,7 +399,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                         _showDeleteDialog(_currencies[_selectedRowIndex!]);
                       }
                     },
-                    icon: const Icon(Icons.delete),
+                    icon: const Icon(Icons.delete, color: Colors.white,),
                     label: const Text('Удалить'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,

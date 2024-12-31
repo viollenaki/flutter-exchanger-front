@@ -59,7 +59,6 @@ class ExportToPdf {
     final file = File("${output.path}/report_$now.pdf");
     await file.writeAsBytes(await pdf.save());
 
-    // Open the PDF file
     await OpenFile.open(file.path);
   }
 }

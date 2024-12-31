@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import '../models/user.dart';
 
 class ApiService {
-  // static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
-  static const String _baseUrl = 'http://localhost:8000/api/v1';
+  static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
+  // static const String _baseUrl = 'http://localhost:8000/api/v1';
 
   static Map<String, bool> _superUserCache = {};
 

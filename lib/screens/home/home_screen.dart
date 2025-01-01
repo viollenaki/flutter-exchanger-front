@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String _selectedCurrency = 'Валюта';
   List<String> _currencies = ['Валюта'];
   bool _isInitialLoading = true; 
+  Map<String, dynamic> _rates = {};
 
   final GlobalKey<CustomDropdownState> _dropdownKey = GlobalKey<CustomDropdownState>();
   late Future<void> _initFuture;
@@ -64,10 +65,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _initialFetchCurrencies() async {
     try {
       final currencies = await ApiService.fetchCurrencies();
+      final rates = await ApiService.getCurrencyRate();
       if (mounted) {
         setState(() {
           _currencies = ['Валюта', ...currencies];
           _isInitialLoading = false;
+          _rates = rates;
         });
       }
     } catch (e) {
@@ -318,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
             extendBodyBehindAppBar: true,
-            body: AnimatedBackground( // Заменяем старую анимацию на новую
+            body: AnimatedBackground(
               child: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
@@ -326,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        if (_isInitialLoading) // Change condition to use _isInitialLoading
+                        if (_isInitialLoading) 
                           Column(
                             children: List.generate(
                               5,
@@ -350,14 +353,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     icon: Icons.arrow_upward,
                                     isSelected: _isUpSelected,
                                     onPressed: _selectUp,
-                                    selectedColor: Theme.of(context).primaryColor, // Add this line
+                                    selectedColor: Theme.of(context).primaryColor, 
                                   ),
                                   SizedBox(width: 16),
                                   IconToggleButton(
                                     icon: Icons.arrow_downward,
                                     isSelected: _isDownSelected,
                                     onPressed: _selectDown,
-                                    selectedColor: Theme.of(context).primaryColor, // Add this line
+                                    selectedColor: Theme.of(context).primaryColor, 
                                   ),
                                 ],
                               ),
@@ -367,14 +370,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 value: _selectedCurrency,
                                 items: _currencies,
                                 onChanged: (String? newValue) {
+                                  String lowerCurrency = newValue!.toLowerCase();
                                   setState(() {
-                                    _selectedCurrency = newValue!;
+                                    _selectedCurrency = newValue;
+                                    if (_selectedCurrency != 'Валюта') {
+                                      _rateController.text = _rates.keys.contains(lowerCurrency) ? _rateController.text = double.parse(_rates[lowerCurrency]).toStringAsFixed(2) : _rateController.text = '';
+                                      _calculateTotal();
+                                    }else{
+                                      _rateController.text = '';
+                                      _calculateTotal();
+                                    }
                                   });
                                 },
                                 onMenuOpened: _fetchCurrencies,
                               ),
                               SizedBox(height: 16),
-                              _buildInputFields(context), // Use the new method
+                              _buildInputFields(context), 
                               SizedBox(height: 16),
                               CustomButton(
                                 onPressed: _submitEvent,

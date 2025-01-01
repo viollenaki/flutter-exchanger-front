@@ -5,9 +5,9 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: Colors.blueAccent,
+      primaryColor: Color.fromRGBO(0, 204, 153, 1),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blueAccent,
+        seedColor: Color.fromRGBO(0, 204, 153, 1),
         brightness: Brightness.dark
       ),
       useMaterial3: true,

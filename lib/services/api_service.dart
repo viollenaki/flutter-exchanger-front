@@ -5,7 +5,9 @@ import '../models/user.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://tochka28.pythonanywhere.com/api/v1';
+  static const String _ratesUrl = 'https://data.fx.kg/api/v1/central';
   // static const String _baseUrl = 'http://localhost:8000/api/v1';
+  static const String _bearerKey = 'dv2FvCMPNs3S1Snd9Tn9dznvyHVGwrNFxHy9yuNy20d3d94a';
 
   static Map<String, bool> _superUserCache = {};
 
@@ -236,5 +238,21 @@ class ApiService {
 
   static void clearSuperUserCache() {
     _superUserCache.clear();
+  }
+
+  static Future<Map<String, dynamic>> getCurrencyRate() async {
+    final response = await http.get(Uri.parse(_ratesUrl),
+      headers: {
+        'Authorization': 'Bearer $_bearerKey',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data;
+    } else {
+      return {};
+    }
   }
 }

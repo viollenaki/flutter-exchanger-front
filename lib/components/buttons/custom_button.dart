@@ -77,14 +77,14 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
             borderRadius: BorderRadius.circular(8.0),
             gradient: LinearGradient(
               colors: _isPressed 
-                ? [Colors.blue[700]!, Colors.blue[900]!]
-                : [Colors.blue[400]!, Colors.blue[600]!],
+                ? [Color.fromRGBO(0, 204, 153, 0.5),Color.fromRGBO(0, 204, 153, 0.3)]
+                : [Color.fromRGBO(0, 204, 153, 0.9),Color.fromRGBO(0, 204, 153, 0.7)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.3),
+                color: Color.fromRGBO(0, 204, 153, 1).withOpacity(0.3),
                 blurRadius: 8,
                 offset: Offset(0, 4),
               ),

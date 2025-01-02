@@ -345,6 +345,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           if (user != null) {
                             UserManager().setCurrentUser(user);
+                            await ApiService.getAccessJWT(user.username, passwordController.text.trim());
                             Navigator.pushReplacementNamed(context, '/main');
                           } else {
                             setState(() {

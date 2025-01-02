@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     
     _initFuture = _initialFetchCurrencies(); 
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final username = UserManager().getCurrentUser();
       if (username != null) {

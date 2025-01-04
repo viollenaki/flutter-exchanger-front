@@ -60,9 +60,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     }
   }
 
-  Future<void> _addUser(String username, String password, bool isSuperAdmin, String email) async {
+  Future<void> _addUser(String username, String password, bool isSuperAdmin, String email, String phone) async {
     try {
-      await ApiService.addUser(username, password, isSuperAdmin, email);
+      await ApiService.addUser(username, password, isSuperAdmin, email, phone);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: const Text('Пользователь добавлен')),
       );
@@ -74,9 +74,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     }
   }
 
-  Future<void> _editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email) async {
+  Future<void> _editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email, String phone) async {
     try {
-      await ApiService.editUser(username, oldUsername, password, isSuperAdmin, email);
+      await ApiService.editUser(username, oldUsername, password, isSuperAdmin, email, phone);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: const Text('Пользователь изменен')),
       );
@@ -122,6 +122,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     Map<String, dynamic> userData = await ApiService.getUserDetails(username); 
     final TextEditingController usernameController = TextEditingController(text: username);
     final TextEditingController passwordController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController(text: userData["phone"]);
     final TextEditingController emailController = TextEditingController(text: userData["email"]);
     String oldUsername = username;
     bool isSuperAdmin = userData["isSuperUser"];
@@ -140,6 +141,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     context,
                     usernameController: usernameController,
                     emailController: emailController,
+                    phoneController: phoneController,
                     passwordController: passwordController,
                     isSuperAdmin: isSuperAdmin,
                     onSuperAdminChanged: (value) => setState(() => isSuperAdmin = value ?? false),
@@ -156,15 +158,17 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     onPressed: () async {
                       final usernameError = _validateUsername(usernameController.text);
                       final emailError = _validateEmail(emailController.text);
+                      final phoneError = _validatePhone(phoneController.text);
                       final passwordError = _validatePassword(passwordController.text, true);
 
-                      if (usernameError == null && emailError == null && passwordError == null) {
+                      if (usernameError == null && emailError == null && passwordError == null && phoneError == null) {
                         await _editUser(
                           usernameController.text,
                           oldUsername,
                           passwordController.text.isNotEmpty ? passwordController.text : '',
                           isSuperAdmin,
-                          emailController.text
+                          emailController.text,
+                          phoneController.text
                         );
                         Navigator.pop(context);
                       }
@@ -188,6 +192,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   context,
                   usernameController: usernameController,
                   emailController: emailController,
+                  phoneController: phoneController,
                   passwordController: passwordController,
                   isSuperAdmin: isSuperAdmin,
                   onSuperAdminChanged: (value) => setState(() => isSuperAdmin = value ?? false),
@@ -206,7 +211,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           oldUsername,
                           passwordController.text.isNotEmpty ? passwordController.text : '',
                           isSuperAdmin,
-                          emailController.text
+                          emailController.text,
+                          phoneController.text
                         );
                         Navigator.pop(context);
                       }
@@ -304,9 +310,23 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Введите номер телефона';
+    }
+    if (value.isNotEmpty && value.length < 12) {
+      return 'Номер телефона должен содержать не менее 12 символов';
+    }
+    if (value.contains(RegExp(r'[a-zA-Z]'))) {
+      return 'Номер телефона не должен содержать буквы';
+    } 
+    return null;
+  }
+
   Widget _buildFormFields(BuildContext context, {
     required TextEditingController usernameController,
     required TextEditingController emailController,
+    required TextEditingController phoneController,
     required TextEditingController passwordController,
     required bool isSuperAdmin,
     required Function(bool?) onSuperAdminChanged,
@@ -318,6 +338,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       // Add state variables for validation error messages
       String? usernameError;
       String? emailError;
+      String? phoneError;
       String? passwordError;
 
       return StatefulBuilder(
@@ -366,6 +387,32 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 onChanged: (value) {
                   setState(() {
                     emailError = _validateEmail(value);
+                  });
+                },
+              ),
+              if (emailError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Text(
+                    emailError!,
+                    style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              CupertinoTextField(
+                controller: phoneController,
+                placeholder: 'Номер телефона(+996...)',
+                style: const TextStyle(color: CupertinoColors.white),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: phoneError != null ? CupertinoColors.systemRed : CupertinoColors.systemGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                onChanged: (value) {
+                  setState(() {
+                    phoneError = _validatePhone(value);
                   });
                 },
               ),
@@ -486,6 +533,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final TextEditingController usernameController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController();
 
     if (Theme.of(context).isIOS) {
       await showCupertinoDialog(
@@ -501,6 +549,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     context,
                     usernameController: usernameController,
                     emailController: emailController,
+                    phoneController: phoneController,
                     passwordController: passwordController,
                     isSuperAdmin: _isSuperAdmin,
                     onSuperAdminChanged: (value) => setState(() => _isSuperAdmin = value ?? false),
@@ -517,9 +566,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       final usernameError = _validateUsername(usernameController.text);
                       final emailError = _validateEmail(emailController.text);
                       final passwordError = _validatePassword(passwordController.text, false);
+                      final phoneError = _validatePhone(phoneController.text);
 
-                      if (usernameError == null && emailError == null && passwordError == null) {
-                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
+                      if (usernameError == null && emailError == null && passwordError == null && phoneError == null) {
+                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text, phoneController.text);
                         Navigator.pop(context);
                       }
                     },
@@ -542,6 +592,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   context,
                   usernameController: usernameController,
                   emailController: emailController,
+                  phoneController: phoneController,
                   passwordController: passwordController,
                   isSuperAdmin: _isSuperAdmin,
                   onSuperAdminChanged: (value) => setState(() => _isSuperAdmin = value ?? false),
@@ -554,7 +605,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   TextButton(
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
-                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text);
+                        await _addUser(usernameController.text, passwordController.text, _isSuperAdmin, emailController.text, phoneController.text);
                         Navigator.pop(context);
                       }
                     },

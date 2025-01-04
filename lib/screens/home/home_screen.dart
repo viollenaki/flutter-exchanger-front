@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:exchanger/models/user.dart';
 import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final GlobalKey<CustomDropdownState> _dropdownKey = GlobalKey<CustomDropdownState>();
   late Future<void> _initFuture;
 
+  final ScrollController _ratesScrollController = ScrollController();
+  Timer? _scrollTimer;
+  final GlobalKey _scrollKey = GlobalKey();
+  double _singleCycleWidth = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +51,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Добро пожаловать, $username!')),
         );
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollKey.currentContext != null) {
+        final box = _scrollKey.currentContext!.findRenderObject() as RenderBox;
+        _singleCycleWidth = box.size.width / 2;
+      }
+      _startAutoScroll();
+    });
+  }
+
+  void _startAutoScroll() {
+    if (_scrollTimer != null && _scrollTimer!.isActive) return;
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 40), (_) {
+      if (_ratesScrollController.hasClients && _singleCycleWidth > 0) {
+        final offset = _ratesScrollController.offset + 1;
+        if (offset >= _singleCycleWidth) {
+          _ratesScrollController.jumpTo(offset - _singleCycleWidth);
+        } else {
+          _ratesScrollController.jumpTo(offset);
+        }
       }
     });
   }
@@ -99,6 +127,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    _scrollTimer?.cancel();
+    _ratesScrollController.dispose();
     _quantityController.dispose();
     _rateController.dispose();
     _totalController.dispose();
@@ -345,23 +375,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           Column(
                             children: [
                               SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconToggleButton(
-                                    icon: Icons.arrow_upward,
-                                    isSelected: _isUpSelected,
-                                    onPressed: _selectUp,
-                                    selectedColor: Theme.of(context).primaryColor, 
-                                  ),
-                                  SizedBox(width: 16),
-                                  IconToggleButton(
-                                    icon: Icons.arrow_downward,
-                                    isSelected: _isDownSelected,
-                                    onPressed: _selectDown,
-                                    selectedColor: Theme.of(context).primaryColor, 
-                                  ),
-                                ],
+                              _buildScrollingRates(),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 24),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconToggleButton(
+                                      icon: Icons.arrow_upward,
+                                      isSelected: _isUpSelected,
+                                      onPressed: _selectUp,
+                                      selectedColor: Theme.of(context).primaryColor, 
+                                    ),
+                                    SizedBox(width: 16),
+                                    IconToggleButton(
+                                      icon: Icons.arrow_downward,
+                                      isSelected: _isDownSelected,
+                                      onPressed: _selectDown,
+                                      selectedColor: Theme.of(context).primaryColor, 
+                                    ),
+                                  ],
+                                ),
                               ),
                               SizedBox(height: 16),
                               CustomDropdown(
@@ -386,9 +420,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               SizedBox(height: 16),
                               _buildInputFields(context), 
                               SizedBox(height: 16),
-                              CustomButton(
-                                onPressed: _submitEvent,
-                                text: 'Добавить',
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 24),
+                                child: CustomButton(
+                                  onPressed: _submitEvent,
+                                  text: 'Добавить',
+                                ),
                               ),
                             ],
                           ),
@@ -401,6 +438,52 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           );
         }
       },
+    );
+  }
+
+  Widget _buildScrollingRates() {
+    final List<String> currencies = ['RUB', 'USD', 'KZT', 'EUR', 'CNY', 'UZS', 'GBP', 'TRY'];
+    final List<String> rates = currencies.map((currency) {
+      final lowerCurrency = currency.toLowerCase();
+      return _rates.containsKey(lowerCurrency) ? '$currency: ${double.parse(_rates[lowerCurrency]).toStringAsFixed(2)}' : '$currency: N/A';
+    }).toList();
+
+    final List<String> repeatedRates = [...rates, ...rates];
+
+    return SizedBox(
+      height: 30,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollKey.currentContext != null) {
+              final box = _scrollKey.currentContext!.findRenderObject() as RenderBox;
+              final measuredWidth = box.size.width / 2;
+              if (measuredWidth != _singleCycleWidth) {
+                setState(() {
+                  _singleCycleWidth = measuredWidth;
+                });
+                _startAutoScroll();
+              }
+            }
+          });
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            controller: _ratesScrollController,
+            child: Row(
+              key: _scrollKey,
+              children: repeatedRates.map((rateText) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    rateText,
+                    style: TextStyle(color: Colors.amber, fontSize: 16),
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
     );
   }
 }

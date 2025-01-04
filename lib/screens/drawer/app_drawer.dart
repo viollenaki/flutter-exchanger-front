@@ -329,6 +329,7 @@ class _AppDrawerState extends State<AppDrawer> {
                   child: IconButton(
                     icon: Icon(Icons.logout, color: Colors.red),
                     onPressed: () {
+                      ApiService.clearSuperUserCache();
                       UserManager().setCurrentUser(null);
                       Navigator.pushReplacementNamed(context, '/');
                     },

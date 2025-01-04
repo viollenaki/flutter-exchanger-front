@@ -7,12 +7,12 @@ class IconToggleButton extends StatelessWidget {
   final Color? selectedColor;
 
   const IconToggleButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.isSelected,
     required this.onPressed,
     this.selectedColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

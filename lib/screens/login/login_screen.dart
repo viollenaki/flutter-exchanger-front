@@ -72,13 +72,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  bool _isValidEmailOrPhone(String input) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    final phoneRegex = RegExp(r'^\+[0-9]+$');
+    return emailRegex.hasMatch(input) || phoneRegex.hasMatch(input);
+  }
+
   AlertDialog _buildAndroidPasswordResetDialog(BuildContext context, TextEditingController emailController) {
     return AlertDialog(
       title: const Text('Восстановление пароля'),
       content: TextField(
         controller: emailController,
         decoration: const InputDecoration(
-          labelText: 'Введите вашу почту',
+          labelText: 'Введите почту или номер(+996...)',
         ),
       ),
       actions: [
@@ -90,7 +96,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         TextButton(
           onPressed: () async {
-            await _handlePasswordReset(context, emailController.text);
+            final trimmedValue = emailController.text.trim();
+            if (!_isValidEmailOrPhone(trimmedValue)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Введите почту или номер(+996...)')),
+              );
+              return;
+            }
+            await _handlePasswordReset(context, trimmedValue);
           },
           child: const Text('Отправить'),
         ),
@@ -106,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: CupertinoTextField(
           controller: emailController,
           style: const TextStyle(color: Colors.white),
-          placeholder: 'Введите вашу почту',
+          placeholder: 'Введите почту или номер(+996...)',
         ),
       ),
       actions: [
@@ -118,7 +131,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         CupertinoDialogAction(
           onPressed: () async {
-            await _handlePasswordReset(context, emailController.text);
+            final trimmedValue = emailController.text.trim();
+            if (!_isValidEmailOrPhone(trimmedValue)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Введите почту или номер(+996...)')),
+              );
+              return;
+            }
+            await _handlePasswordReset(context, trimmedValue);
           },
           child: const Text('Отправить'),
         ),
@@ -132,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
       content: TextField(
         controller: emailController,
         decoration: const InputDecoration(
-          labelText: 'Введите вашу почту',
+          labelText: 'Введите почту или номер(+996...)',
         ),
       ),
       actions: [
@@ -144,7 +164,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         TextButton(
           onPressed: () async {
-            await _handlePasswordReset(context, emailController.text);
+            final trimmedValue = emailController.text.trim();
+            if (!_isValidEmailOrPhone(trimmedValue)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Введите почту или номер(+996...)')),
+              );
+              return;
+            }
+            await _handlePasswordReset(context, trimmedValue);
           },
           child: const Text('Отправить'),
         ),
@@ -163,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
           if (Theme.of(context).isAndroid) {
             return AlertDialog(
               title: const Text('Успеx'),
-              content: const Text('Ссылка для сброса отправлена на почту'),
+              content: const Text('Ссылка для сброса отправлена.'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -176,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
           } else if (Theme.of(context).isIOS) {
             return CupertinoAlertDialog(
               title: const Text('Успех'),
-              content: const Text('Ссылка для сброса отправлена на почту'),
+              content: const Text('Ссылка для сброса отправлена.'),
               actions: [
                 CupertinoDialogAction(
                   onPressed: () {
@@ -189,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
           } else {
             return AlertDialog(
               title: const Text('Успех'),
-              content: const Text('Ссылка для сброса отправлена на почту'),
+              content: const Text('Ссылка для сброса отправлена.'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -346,6 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (user != null) {
                             UserManager().setCurrentUser(user);
                             await ApiService.getAccessJWT(user.username, passwordController.text.trim());
+                            await ApiService.isSuperUser(user.username);
                             Navigator.pushReplacementNamed(context, '/main');
                           } else {
                             setState(() {

@@ -178,12 +178,12 @@ class ApiService {
     }
   }
 
-  static Future<void> addUser(String username, String password, bool isSuperAdmin, String email) async {
+  static Future<void> addUser(String username, String password, bool isSuperAdmin, String email, String phone) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.post(
         Uri.parse('$_baseUrl/users'),
         headers: headers,
-        body: json.encode({'username': username, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email}),
+        body: json.encode({'username': username, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email, "phone": phone}),
       ),
     );
 
@@ -206,12 +206,12 @@ class ApiService {
     }
   }
 
-  static Future<void> editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email) async {
+  static Future<void> editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email, String phone) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.put(
         Uri.parse('$_baseUrl/users'),
         headers: headers,
-        body: json.encode({'username': username, 'oldUsername': oldUsername, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email}),
+        body: json.encode({'username': username, 'oldUsername': oldUsername, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email, "phone": phone}),
       ),
     );
 
@@ -298,6 +298,7 @@ class ApiService {
     final response = await http.get(Uri.parse(_ratesUrl),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_bearerKey'}
     );
+    print(response.body);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data;
@@ -312,11 +313,14 @@ class ApiService {
         body: json.encode({'username': username, 'password': password})
     );
 
+
     if (response.statusCode == 200) {
       final decodedResponse = utf8.decode(response.bodyBytes);
       final Map<String, dynamic> data = json.decode(decodedResponse);    
       final storage = FlutterSecureStorage();
       await storage.write(key: 'accessToken', value: data['access']);
+      print(data['access']);
+
       await storage.write(key: 'refreshToken', value: data['refresh']);
     } else {
       throw Exception('Failed to load tokens');

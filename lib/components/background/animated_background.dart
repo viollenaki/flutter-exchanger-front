@@ -52,7 +52,16 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with SingleTick
     return Stack(
       children: [
         Container(
-          color: Colors.black,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.black,
+                Colors.grey.shade900,
+              ],
+            ),
+          ),
         ),
         CustomPaint(
           painter: FinanceSymbolsPainter(

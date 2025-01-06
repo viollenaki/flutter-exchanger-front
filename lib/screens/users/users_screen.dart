@@ -1,6 +1,7 @@
 import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'dart:async';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import '../../components/header_cell.dart';
@@ -22,6 +23,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   bool _isSuperAdmin = false;
   late AnimationController _animationController;
   final formKey = GlobalKey<FormState>();
+  Timer? _updateTimer;
 
   final Map<String, String> _headerTitles = {
     'username': 'Имя пользователя',
@@ -35,11 +37,15 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       vsync: this,
     );
     _fetchUsers();
+    _updateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchUsers();
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _updateTimer?.cancel();
     super.dispose();
   }
 
@@ -125,7 +131,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final TextEditingController phoneController = TextEditingController(text: userData["phone"]);
     final TextEditingController emailController = TextEditingController(text: userData["email"]);
     String oldUsername = username;
-    bool isSuperAdmin = userData["isSuperUser"];
+    bool isSuperAdmin = userData["is_superuser"];
 
     if (Theme.of(context).isIOS) {
       await showCupertinoDialog(

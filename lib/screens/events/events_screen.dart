@@ -1,6 +1,7 @@
 import 'package:exchanger/styles/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../components/loading/shimmer_loading.dart';
 import '../../services/api_service.dart';
 import 'package:exchanger/components/background/animated_background.dart';
@@ -27,6 +28,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   int? _selectedRowIndex;
   TimeOfDay? _selectedTime;
   late AnimationController _animationController;
+  Timer? _updateTimer;
 
   final Map<String, String> _headerTitles = {
     'date': 'Время',
@@ -46,11 +48,16 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     );
     _fetchEvents();
     _fetchCurrencies();
+    _updateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchEvents();
+      _fetchCurrencies();
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _updateTimer?.cancel();
     super.dispose();
   }
 

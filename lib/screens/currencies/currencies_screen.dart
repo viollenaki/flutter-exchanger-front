@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../components/header_cell.dart';
 import '../../components/table_cell.dart' as custom;
 import '../../components/buttons/custom_button.dart';
+import 'dart:async';
 
 class CurrenciesScreen extends StatefulWidget {
   const CurrenciesScreen({super.key});
@@ -21,6 +22,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
   int? _selectedRowIndex;
   late AnimationController _animationController;
   final formKey = GlobalKey<FormState>();
+  Timer? _updateTimer;
 
   final Map<String, String> _headerTitles = {
     'currency': 'Валюта',
@@ -33,12 +35,21 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
+    
+    
     _fetchCurrencies();
+    // Повторить запрос
+    _updateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchCurrencies();
+      print('Currencies updated');
+    });
+  
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _updateTimer?.cancel();
     super.dispose();
   }
 
@@ -518,6 +529,7 @@ class _CurrenciesScreenState extends State<CurrenciesScreen> with SingleTickerPr
                                     itemCount: _currencies.length,
                                     itemBuilder: (context, index) {
                                       final currency = _currencies[index];
+                                      
                                       return GestureDetector(
                                         onTap: () => _handleRowSelection(index),
                                         child: Container(

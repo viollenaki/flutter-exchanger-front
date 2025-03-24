@@ -165,7 +165,7 @@ class ApiService {
     );
 
     if (response.statusCode != 204) {
-      throw Exception('Failed to delete event');
+      throw Exception('Failed to delete eventttt');
     }
   }
 

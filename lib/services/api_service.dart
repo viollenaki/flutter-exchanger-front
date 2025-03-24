@@ -5,7 +5,7 @@ import '../models/user.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String _baseUrl = 'BACKEND_DEPLOY_URL';
+  static const String _baseUrl = 'http://192.168.50.114:8000/api/v1';
   static const String _ratesUrl = 'https://data.fx.kg/api/v1/central';
   // static const String _baseUrl = 'http://127.0.0.1:8000/api/v1';
   static const String _bearerKey = 'DATA_FX_KEY';
@@ -36,9 +36,9 @@ class ApiService {
   }
 
   static Future<List<String>> fetchCurrencies() async {
-
     final response = await _makeRequestWithTokenRefresh(
-      (headers) => http.get(Uri.parse('$_baseUrl/currencies'), headers: headers),
+      (headers) =>
+          http.get(Uri.parse('$_baseUrl/currencies'), headers: headers),
     );
 
     if (response.statusCode == 200) {
@@ -78,12 +78,14 @@ class ApiService {
     }
   }
 
-  static Future<void> editCurrency(String currencyName, String currencyOldName) async {
+  static Future<void> editCurrency(
+      String currencyName, String currencyOldName) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.put(
         Uri.parse('$_baseUrl/currencies/$currencyName'),
         headers: headers,
-        body: json.encode({'newName': currencyName, 'oldName': currencyOldName}),
+        body:
+            json.encode({'newName': currencyName, 'oldName': currencyOldName}),
       ),
     );
 
@@ -92,7 +94,8 @@ class ApiService {
     }
   }
 
-  static Future<void> addEvent(String type, String currency, double amount, double rate, double total) async {
+  static Future<void> addEvent(String type, String currency, double amount,
+      double rate, double total) async {
     final now = DateTime.now();
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.post(
@@ -157,7 +160,8 @@ class ApiService {
 
   static Future<void> deleteEvent(int id) async {
     final response = await _makeRequestWithTokenRefresh(
-      (headers) => http.delete(Uri.parse('$_baseUrl/events/$id'), headers: headers),
+      (headers) =>
+          http.delete(Uri.parse('$_baseUrl/events/$id'), headers: headers),
     );
 
     if (response.statusCode != 204) {
@@ -179,12 +183,19 @@ class ApiService {
     }
   }
 
-  static Future<void> addUser(String username, String password, bool isSuperAdmin, String email, String phone) async {
+  static Future<void> addUser(String username, String password,
+      bool isSuperAdmin, String email, String phone) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.post(
         Uri.parse('$_baseUrl/users'),
         headers: headers,
-        body: json.encode({'username': username, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email, "phone": phone}),
+        body: json.encode({
+          'username': username,
+          'password': password,
+          'isSuperUser': isSuperAdmin,
+          'email': email,
+          "phone": phone
+        }),
       ),
     );
 
@@ -207,12 +218,20 @@ class ApiService {
     }
   }
 
-  static Future<void> editUser(String username, String oldUsername, String password, bool isSuperAdmin, String email, String phone) async {
+  static Future<void> editUser(String username, String oldUsername,
+      String password, bool isSuperAdmin, String email, String phone) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.put(
         Uri.parse('$_baseUrl/users'),
         headers: headers,
-        body: json.encode({'username': username, 'oldUsername': oldUsername, 'password': password, 'isSuperUser': isSuperAdmin, 'email': email, "phone": phone}),
+        body: json.encode({
+          'username': username,
+          'oldUsername': oldUsername,
+          'password': password,
+          'isSuperUser': isSuperAdmin,
+          'email': email,
+          "phone": phone
+        }),
       ),
     );
 
@@ -223,7 +242,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getUserDetails(String username) async {
     final response = await _makeRequestWithTokenRefresh(
-      (headers) => http.get(Uri.parse('$_baseUrl/users/$username'), headers: headers),
+      (headers) =>
+          http.get(Uri.parse('$_baseUrl/users/$username'), headers: headers),
     );
 
     if (response.statusCode == 200) {
@@ -252,7 +272,8 @@ class ApiService {
     }
   }
 
-  static Future<bool> editEvent(int id, String type, String currency, double amount, double rate, double total) async {
+  static Future<bool> editEvent(int id, String type, String currency,
+      double amount, double rate, double total) async {
     final response = await _makeRequestWithTokenRefresh(
       (headers) => http.put(
         Uri.parse('$_baseUrl/events/$id'),
@@ -268,8 +289,8 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
-      return false;      
-    }else{
+      return false;
+    } else {
       return true;
     }
   }
@@ -296,9 +317,10 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getCurrencyRate() async {
-    final response = await http.get(Uri.parse(_ratesUrl),
-        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_bearerKey'}
-    );
+    final response = await http.get(Uri.parse(_ratesUrl), headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $_bearerKey'
+    });
     print(response.body);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -309,15 +331,13 @@ class ApiService {
   }
 
   static Future<void> getAccessJWT(String username, String password) async {
-    final response = await http.post(Uri.parse('$_baseUrl/token'), 
+    final response = await http.post(Uri.parse('$_baseUrl/token'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username, 'password': password})
-    );
-
+        body: json.encode({'username': username, 'password': password}));
 
     if (response.statusCode == 200) {
       final decodedResponse = utf8.decode(response.bodyBytes);
-      final Map<String, dynamic> data = json.decode(decodedResponse);    
+      final Map<String, dynamic> data = json.decode(decodedResponse);
       final storage = FlutterSecureStorage();
       await storage.write(key: 'accessToken', value: data['access']);
       print(data['access']);
